@@ -96,8 +96,8 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
     private Bitmap temp_bitmap;
     private Canvas temp_canvas;
     
-    private ImageView floor_plan, location_pin, AP1_ImageView,
-            AP2_ImageView, AP3_ImageView, AP4_ImageView, AP5_ImageView, AP6_ImageView;
+    private ImageView floor_plan, location_pin, AP1_ImageView, AP2_ImageView,
+            AP3_ImageView, AP4_ImageView, AP5_ImageView, AP6_ImageView, AP7_ImageView, AP8_ImageView;
 
     private TextView LocationX, LocationY;
 
@@ -113,12 +113,14 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
     private String RTT_response;
     private String[] Calculated_coordinates = new String[2];
 
-    private final AccessPoints AP1 = new AccessPoints("b0:e4:d5:39:26:89",47.508,14.81);
-    private final AccessPoints AP2 = new AccessPoints("cc:f4:11:8b:29:4d",33.190,5.773);
-    private final AccessPoints AP3 = new AccessPoints("b0:e4:d5:01:26:f5",48.931,5.684);
-    private final AccessPoints AP4 = new AccessPoints("b0:e4:d5:5f:f2:ad",29.964,14.281);
-    private final AccessPoints AP5 = new AccessPoints("b0:e4:d5:96:3b:95",21.657,15.631);
-    private final AccessPoints AP6 = new AccessPoints("b0:e4:d5:91:ba:5d",15.786,6.282);
+    private final AccessPoints AP1 = new AccessPoints("b0:e4:d5:39:26:89",31,14.46);
+    private final AccessPoints AP2 = new AccessPoints("cc:f4:11:8b:29:4d",49,15.11);
+    private final AccessPoints AP3 = new AccessPoints("b0:e4:d5:01:26:f5",43.19,14.66);
+    private final AccessPoints AP4 = new AccessPoints("b0:e4:d5:91:ba:5d",15.68,13.17);
+    private final AccessPoints AP5 = new AccessPoints("b0:e4:d5:96:3b:95",8.78,5.6);
+    private final AccessPoints AP6 = new AccessPoints("f8:1a:2b:06:3c:0b",29.1,5.6);
+    private final AccessPoints AP7 = new AccessPoints("14:22:3b:2a:86:f5",39.31,5.6);
+    private final AccessPoints AP8 = new AccessPoints("14:22:3b:16:5a:bd",51.76,5.6);
 
     //flag for leaving the activity
     private Boolean Running = true;
@@ -175,6 +177,8 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
             AP4_ImageView = findViewById(R.id.imageViewAP4);
             AP5_ImageView = findViewById(R.id.imageViewAP5);
             AP6_ImageView = findViewById(R.id.imageViewAP6);
+            AP7_ImageView = findViewById(R.id.imageViewAP7);
+            AP8_ImageView = findViewById(R.id.imageViewAP8);
 
             LocationX = findViewById(R.id.textViewLocationX);
             LocationY = findViewById(R.id.textViewLocationY);
@@ -263,6 +267,10 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         AP5_ImageView.setY(convert2coordinatesY(AP5.getX()));
         AP6_ImageView.setX(convert2coordinatesX(AP6.getY()));
         AP6_ImageView.setY(convert2coordinatesY(AP6.getX()));
+        AP7_ImageView.setX(convert2coordinatesX(AP7.getY()));
+        AP7_ImageView.setY(convert2coordinatesY(AP7.getX()));
+        AP8_ImageView.setX(convert2coordinatesX(AP8.getY()));
+        AP8_ImageView.setY(convert2coordinatesY(AP8.getX()));
 
         //my desk
         location_pin.setX(convert2coordinatesX(1364/meter2pixel));

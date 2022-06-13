@@ -109,5 +109,21 @@
             android:rotation="90"
             app:srcCompat="@drawable/ap_pin" />
 
+        <ImageView
+            android:id="@+id/imageViewAP7"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/APContentDescription"
+            android:rotation="90"
+            app:srcCompat="@drawable/ap_pin" />
+
+        <ImageView
+            android:id="@+id/imageViewAP8"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/APContentDescription"
+            android:rotation="90"
+            app:srcCompat="@drawable/ap_pin" />
+
     </FrameLayout>
 
