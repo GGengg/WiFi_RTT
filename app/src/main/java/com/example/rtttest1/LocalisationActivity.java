@@ -79,7 +79,6 @@ public class LocalisationActivity extends AppCompatActivity implements SensorEve
     private SensorManager sensorManager;
     private final HashMap<String, Sensor> sensors = new HashMap<>();
     private long IMU_timestamp;
-    int IMU_num = 0;
     private long Closest_IMU_timestamp;
 
     private final float[] rotationMatrix = new float[9];
@@ -115,7 +114,7 @@ public class LocalisationActivity extends AppCompatActivity implements SensorEve
     double screen_offsetX = 241; //in pixels
      */
 
-    int start = 0;
+    int start_localisation = 0;
 
     private String Location_from_server;
     private String[] Calculated_coordinates = new String[2];
@@ -150,9 +149,8 @@ public class LocalisationActivity extends AppCompatActivity implements SensorEve
                     "Please scan for available APs first",
                     Toast.LENGTH_SHORT).show();
             finish();
-
         } else {
-            setContentView(R.layout.activity_localization);
+            setContentView(R.layout.activity_localisation);
 
             //RTT Initiation
             myWifiRTTManager = (WifiRttManager) getSystemService(Context.WIFI_RTT_RANGING_SERVICE);
@@ -307,7 +305,7 @@ public class LocalisationActivity extends AppCompatActivity implements SensorEve
                     if (Calculated_coordinates[0] != null && Calculated_coordinates[1] != null) {
                         //TODO try except for wrong format
 
-                        if (start == 0) {
+                        if (start_localisation == 0) {
                             Previous_location_for_line_drawing = Calculated_coordinates;
                             LocationX.setText(String.format(Locale.getDefault(),
                                     "%.2f",Double.valueOf(Calculated_coordinates[0])));
@@ -316,7 +314,7 @@ public class LocalisationActivity extends AppCompatActivity implements SensorEve
 
                             location_pin.setX(coordinate_X_to_Pixel(Double.parseDouble(Calculated_coordinates[1])));
                             location_pin.setY(coordinate_Y_to_Pixel(Double.parseDouble(Calculated_coordinates[0])));
-                            start ++;
+                            start_localisation ++;
                         } else {
                             LocationX.setText(String.format(Locale.getDefault(),
                                     "%.2f",Double.valueOf(Calculated_coordinates[0])));
@@ -359,7 +357,7 @@ public class LocalisationActivity extends AppCompatActivity implements SensorEve
         EditText url_text = findViewById(R.id.editText_server);
         String url_bit = url_text.getText().toString();
         String url = "http://192.168.86."+url_bit+":5000/server";
-        Log.d(TAG,url);
+        Log.d(TAG, "Start sending to "+ url);
         final OkHttpClient client = new OkHttpClient();
 
         //TODO use thread
@@ -428,11 +426,9 @@ public class LocalisationActivity extends AppCompatActivity implements SensorEve
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                IMU_num++;
                 RequestBody IMU_Body = new FormBody.Builder()
                         .add("Flag","IMU")
                         .add("Timestamp", String.valueOf(SystemClock.elapsedRealtimeNanos()))
-                        .add("num",String.valueOf(IMU_num))
                         .add("Accx", String.valueOf(LastAccReading[0]))
                         .add("Accy", String.valueOf(LastAccReading[1]))
                         .add("Accz", String.valueOf(LastAccReading[2]))
@@ -479,7 +475,7 @@ public class LocalisationActivity extends AppCompatActivity implements SensorEve
         Runnable BackgroundScan_Runnable = new Runnable() {
             @Override
             public void run() {
-                if (Running && (APs_MacAddress.size()<6)) {
+                if (Running && (APs_MacAddress.size() < 8)) {
                     Log.d(TAG,"Scanning...");
                     BackgroundScan_Handler.postDelayed(this,5000);
                     myWifiManager.startScan();
@@ -609,14 +605,8 @@ public class LocalisationActivity extends AppCompatActivity implements SensorEve
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-        Log.d(TAG, "onPause() LocalizationActivity");
-    }
-
-    @Override
     protected void onStop() {
-        Log.d(TAG, "onStop() LocalizationActivity");
+        Log.d(TAG, "onStop() LocalisationActivity");
         super.onStop();
         unregisterSensors();
         //unregisterReceiver(myWifiScanReceiver);
@@ -624,7 +614,7 @@ public class LocalisationActivity extends AppCompatActivity implements SensorEve
     }
 
     protected void onResume() {
-        Log.d(TAG,"onResume() LocalizationActivity");
+        Log.d(TAG,"onResume() LocalisationActivity");
         super.onResume();
         registerSensors();
         //registerReceiver(myWifiScanReceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
