@@ -21,7 +21,7 @@
     <string name="ActivityRangingLabel">Show ranging results</string>
     <string name="DelayBeforeNextRequest">RTT Ranging Delay (ms)</string>
     <string name="DelayHint">1000</string>
-    <string name="LogButton">Log data</string>
+    <string name="LogButton">Start logging</string>
     <string name="RangeHeader">Range(mm)</string>
     <string name="Range_SDHeader">Range_SD(mm)</string>
     <string name="RSSHeader">RSS(dB)</string>
@@ -41,8 +41,8 @@
     <string name="ServerURLbit">Please enter URL</string>
     <string name="CheckPointCounts">Check Point</string>
 
-    <!-- LocalizationActivity -->
-    <string name="ActivityLocalizationLabel">Localization based on floor plan</string>
+    <!-- LocalisationActivity -->
+    <string name="ActivityLocalisationLabel">Localisation based on floor plan</string>
     <string name="StartUpdatingLocationButton">Start Updating Location</string>
 
     <!-- activity_localization.xml -->

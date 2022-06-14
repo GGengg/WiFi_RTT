@@ -354,6 +354,7 @@ public class LocalisationActivity extends AppCompatActivity implements SensorEve
     }
 
     public void onClickstartLoggingData(View view){
+        view.setEnabled(false);
         EditText url_text = findViewById(R.id.editText_server);
         String url_bit = url_text.getText().toString();
         String url = "http://192.168.86."+url_bit+":5000/server";

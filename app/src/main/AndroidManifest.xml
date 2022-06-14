@@ -53,7 +53,7 @@
         </activity>
 
         <activity android:name=".LocalisationActivity"
-            android:label="@string/ActivityLocalizationLabel"
+            android:label="@string/ActivityLocalisationLabel"
             android:parentActivityName=".RangingActivity">
         </activity>
 

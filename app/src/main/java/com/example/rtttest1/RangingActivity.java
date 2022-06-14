@@ -21,6 +21,7 @@ import android.os.SystemClock;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -92,7 +93,8 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
     private long IMU_timestamp;
     private long Closest_IMU_timestamp;
 
-    private Boolean Running = true;
+    private Boolean activity_running = true;
+    private Boolean logging = false;
 
     //Ranging layout
 
@@ -105,6 +107,7 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
     private TextView textMagx, textMagy, textMagz;
 
     private TextView Counts;
+    private Button logging_button_text;
 
     int Check_Point_Counts = 0;
 
@@ -169,6 +172,7 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
             sensors.put("Gyroscope",sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE));
 
             Counts = findViewById(R.id.textViewCounts);
+            logging_button_text = findViewById(R.id.btnLogRTT);
 
             //Start
             registerSensors();
@@ -208,12 +212,13 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
     }
 
     public void onClickBackgroundScan(View view){
+        view.setEnabled(false);
         Snackbar.make(view,"Start scanning in background",Snackbar.LENGTH_SHORT).show();
         Handler Update_Handler = new Handler();
         Runnable Update_Runnable = new Runnable() {
             @Override
             public void run() {
-                if (Running && (APs_MacAddress.size() < 8)){
+                if (activity_running && (APs_MacAddress.size() < 8)){
                     //background scan rate
                     Update_Handler.postDelayed(this,3000);
                     myWifiManager.startScan();
@@ -228,22 +233,33 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
 
     public void onClickLogData(View view){
         //TODO editText
+        //TODO will AsyncTask/Thread/Queue work better?
+        Log.d(TAG,"logging: "+logging+" activity running: "+activity_running);
+
         EditText url_text = findViewById(R.id.editTextServer);
         String url_bit = url_text.getText().toString();
         String url = "http://192.168.86." + url_bit + ":5000/server";
-        Snackbar.make(view,"Start sending to" + url,Snackbar.LENGTH_SHORT).show();
 
         final OkHttpClient client = new OkHttpClient();
 
-        //TODO will AsyncTask/Thread/Queue work better?
+        if (!logging) {
+            Snackbar.make(view,"Start sending data",Snackbar.LENGTH_SHORT).show();
+            logging_button_text.setText("Stop logging");
+
+        } else {
+            Snackbar.make(view,"Stop sending data",Snackbar.LENGTH_SHORT).show();
+            logging_button_text.setText("Start logging");
+        }
+
+        Log.d(TAG,"logging: "+logging+" activity running: "+activity_running);
 
         Handler LogRTT_Handler = new Handler();
         Runnable LogRTT_Runnable = new Runnable() {
             @Override
             public void run() {
-                if (!Running){
-                    LogRTT_Handler.removeCallbacks(this);
-                } else{
+                Log.d(TAG,String.valueOf(logging && activity_running));
+                if (logging && activity_running){
+
                     //rate of RTT packet sending(optimal is 200)
                     LogRTT_Handler.postDelayed(this,200);
 
@@ -291,14 +307,21 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
                                 throws IOException {
                             String result = Objects.requireNonNull(response.body()).string();
                             response.close();
-                            Log.i("result",result);
+                            //Log.i("result",result);
                         }
                     });
+                } else {
+                    LogRTT_Handler.removeCallbacks(this);
                 }
             }
         };
+        LogRTT_Handler.postDelayed(LogRTT_Runnable,1000);
+        logging = !logging;
+
+        Log.d(TAG,"logging: "+logging+" activity running: "+activity_running);
+        /*
         Thread IMU_thread = new Thread(() -> {
-            while (Running) {
+            while (activity_running) {
                 try {
                     Thread.sleep(50);
                 } catch (InterruptedException e) {
@@ -345,7 +368,9 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
             }
         });
         //IMU_thread.start();
-        LogRTT_Handler.postDelayed(LogRTT_Runnable,1000);
+
+
+         */
     }
 
     @Override
@@ -444,7 +469,7 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
         @Override
         public void onRangingFailure(int i) {
             Log.d(TAG,"Ranging failed！");
-            if (Running) {
+            if (activity_running) {
                 queueNextRangingRequest();
             }
         }
@@ -465,7 +490,7 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
             Synchronised_LastGyroReading = LastGyroReading;
             Synchronised_LastMagReading = LastMagReading;
             Closest_IMU_timestamp = IMU_timestamp;
-            if (Running) {
+            if (activity_running) {
                 if (!temp_result.isEmpty()){
                     rangingActivityAdapter.swapData(temp_result);
                 }
@@ -490,7 +515,7 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
         super.onStop();
         unregisterSensors();
         unregisterReceiver(myWifiScanReceiver);
-        Running = false;
+        activity_running = false;
     }
 
     protected void onResume() {
@@ -498,6 +523,6 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
         super.onResume();
         registerSensors();
         //registerReceiver(myWifiScanReceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
-        Running = true;
+        activity_running = true;
     }
 }
