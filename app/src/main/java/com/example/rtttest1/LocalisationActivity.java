@@ -33,14 +33,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-
-import com.google.android.material.snackbar.Snackbar;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -50,9 +48,9 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-public class LocalizationActivity extends AppCompatActivity implements SensorEventListener {
+public class LocalisationActivity extends AppCompatActivity implements SensorEventListener {
 
-    private static final String TAG = "LocalizationActivity";
+    private static final String TAG = "LocalisationActivity";
 
     //TODO publuc WifiManager/WifiRTTManager/RTTRangingResultCallback for all activities?
     //TODO fix layout in all orientations
@@ -68,7 +66,10 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
 
     private List<ScanResult> RTT_APs = new ArrayList<>();
     private final List<RangingResult> Ranging_Results = new ArrayList<>();
+    private List<RangingResult> Synchronised_RTT = new ArrayList<>();
     private final List<String> APs_MacAddress = new ArrayList<>();
+
+    private long RTT_timestamp;
 
     final Handler RangingRequestDelayHandler = new Handler();
 
@@ -76,20 +77,25 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
      * For IMU service
      */
     private SensorManager sensorManager;
-
     private final HashMap<String, Sensor> sensors = new HashMap<>();
-
     private long IMU_timestamp;
-    private long RTT_timestamp;
+    int IMU_num = 0;
+    private long Closest_IMU_timestamp;
 
     private final float[] rotationMatrix = new float[9];
     private final float[] inclinationMatrix = new float[9];
     private final float[] orientationAngles = new float[3];
+    private float[] Synchronised_orientationAngles = new float[3];
+
     private final float[] LastAccReading = new float[3];
     private final float[] LastMagReading = new float[3];
     private final float[] LastGyroReading = new float[3];
+    private float[] Synchronised_LastAccReading = new float[3];
+    private float[] Synchronised_LastMagReading = new float[3];
+    private float[] Synchronised_LastGyroReading = new float[3];
+
     /**
-     * For Localization service
+     * For Localisation service
      */
     private Paint paint;
     private Path path;
@@ -101,17 +107,19 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
 
     private TextView LocationX, LocationY;
 
+    /*
     int[] floor_plan_location = new int[2];
     int[] AP_location = new int[2];
     int[] pin_location = new int[2];
     double meter2pixel = 32.53275; // 1 meter <--> 32.53275 pixels for THIS PARTICULAR FLOOR PLAN!
-    double bitmap2floorplan = 2.994;
     double screen_offsetX = 241; //in pixels
-    //double screen_offsetX = 201;
-    //int testing_i, testing_j, path_y;
+     */
 
-    private String RTT_response;
+    int start = 0;
+
+    private String Location_from_server;
     private String[] Calculated_coordinates = new String[2];
+    private String[] Previous_location_for_line_drawing = new String[2];
 
     private final AccessPoints AP1 = new AccessPoints("b0:e4:d5:39:26:89",31,14.46);
     private final AccessPoints AP2 = new AccessPoints("cc:f4:11:8b:29:4d",49,15.11);
@@ -124,8 +132,6 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
 
     //flag for leaving the activity
     private Boolean Running = true;
-
-    int IMU_num = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState){
@@ -163,7 +169,6 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
 
             //IMU Initiation
             sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-
             sensors.put("Accelerometer", sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER));
             sensors.put("Gyroscope", sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE));
             sensors.put("Magnetic", sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD));
@@ -200,7 +205,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
             paint.setStrokeWidth(10);
             paint.setPathEffect(new DashPathEffect(new float[] {20,10,10,10},1));
 
-            //Start Localization
+            //Start Localisation
             setup_pin_location();
             registerSensors();
             startRangingRequest();
@@ -214,7 +219,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
       The following method is used to determine the dimension of floor plan
       in aid of constructing an coordinate plane.
      */
-    /*
+/*
       public void onWindowFocusChanged(boolean hasFocus) {
           super.onWindowFocusChanged(hasFocus);
           if (hasFocus) {
@@ -231,89 +236,65 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
               Log.i(TAG, "Image Height: " + floor_plan.getHeight());
           }
       }
-    */
+
+ */
 
     /** To calculate coordinates
-     * top left corner of the screen (55,145), top left corner of the floor plan (241,145)
+     * top left corner of the screen = setX/Y(0,0) = Pin location(55,136)
+     * top left corner of the floor plan (240,136)
      * SetY(-26) > left edge of the floor plan
-     * width of floor plan (597), height of floor plan (2151)
+     * width of floor plan (599), height of floor plan (2160)
      * width of bitmap (1788), height of bitmap (6438)
      *
      * FOR PIN LOCATION:
-     * setX = y*<meter2pixel>(32.533)+<screen_offsetX>(241) * 591/650, setY = x*<meter2pixel>(32.533)
+     * setX = y*<meter2pixel>+<screen_offsetX>*591/650, setY = x*<meter2pixel>*2151/2341
      *
      * FOR PATH EFFECT:
      * path.moveTo/lineTo( (y*32.533*bitmap2floorplan / Pin_y*bitmap2floorplan), ((x*32.533+26)*bitmap2floorplan) )
      */
 
-    private float convert2coordinatesX(double Y){
-        return (float) (Y*meter2pixel+screen_offsetX)*591/650;
+    private float coordinate_X_to_Pixel(double Y){
+        return (float) (Y*30+240);
     }
 
-    private float convert2coordinatesY(double X){
-        return (float) (X*meter2pixel)*2151/2341;
+    private float coordinate_Y_to_Pixel(double X){
+        return (float) (X*30-26);
+    }
+
+    private float coordinate_X_to_bitmap(double Y){
+        return (float) (Y*1788/20);
+    }
+
+    private float coordinate_Y_to_bitmap(double X){
+        return (float) (X*6438/72);
     }
 
     private void setup_pin_location(){
-        AP1_ImageView.setX(convert2coordinatesX(AP1.getY()));
-        AP1_ImageView.setY(convert2coordinatesY(AP1.getX()));
-        AP2_ImageView.setX(convert2coordinatesX(AP2.getY()));
-        AP2_ImageView.setY(convert2coordinatesY(AP2.getX()));
-        AP3_ImageView.setX(convert2coordinatesX(AP3.getY()));
-        AP3_ImageView.setY(convert2coordinatesY(AP3.getX()));
-        AP4_ImageView.setX(convert2coordinatesX(AP4.getY()));
-        AP4_ImageView.setY(convert2coordinatesY(AP4.getX()));
-        AP5_ImageView.setX(convert2coordinatesX(AP5.getY()));
-        AP5_ImageView.setY(convert2coordinatesY(AP5.getX()));
-        AP6_ImageView.setX(convert2coordinatesX(AP6.getY()));
-        AP6_ImageView.setY(convert2coordinatesY(AP6.getX()));
-        AP7_ImageView.setX(convert2coordinatesX(AP7.getY()));
-        AP7_ImageView.setY(convert2coordinatesY(AP7.getX()));
-        AP8_ImageView.setX(convert2coordinatesX(AP8.getY()));
-        AP8_ImageView.setY(convert2coordinatesY(AP8.getX()));
+        AP1_ImageView.setX(coordinate_X_to_Pixel(AP1.getY()));
+        AP1_ImageView.setY(coordinate_Y_to_Pixel(AP1.getX()));
+        AP2_ImageView.setX(coordinate_X_to_Pixel(AP2.getY()));
+        AP2_ImageView.setY(coordinate_Y_to_Pixel(AP2.getX()));
+        AP3_ImageView.setX(coordinate_X_to_Pixel(AP3.getY()));
+        AP3_ImageView.setY(coordinate_Y_to_Pixel(AP3.getX()));
+        AP4_ImageView.setX(coordinate_X_to_Pixel(AP4.getY()));
+        AP4_ImageView.setY(coordinate_Y_to_Pixel(AP4.getX()));
+        AP5_ImageView.setX(coordinate_X_to_Pixel(AP5.getY()));
+        AP5_ImageView.setY(coordinate_Y_to_Pixel(AP5.getX()));
+        AP6_ImageView.setX(coordinate_X_to_Pixel(AP6.getY()));
+        AP6_ImageView.setY(coordinate_Y_to_Pixel(AP6.getX()));
+        AP7_ImageView.setX(coordinate_X_to_Pixel(AP7.getY()));
+        AP7_ImageView.setY(coordinate_Y_to_Pixel(AP7.getX()));
+        AP8_ImageView.setX(coordinate_X_to_Pixel(AP8.getY()));
+        AP8_ImageView.setY(coordinate_Y_to_Pixel(AP8.getX()));
 
         //my desk
-        location_pin.setX(convert2coordinatesX(1364/meter2pixel));
-        location_pin.setY(convert2coordinatesY(489/meter2pixel));
+        location_pin.setX(coordinate_X_to_Pixel(14.66));
+        location_pin.setY(coordinate_Y_to_Pixel(42));
     }
 
     //TODO animated drawable?
     private void update_location_pin(){
         //TODO better coordinate system?
-
-        /*
-        testing_i = 1500;
-        testing_j = 570;
-        path_y = (int) ((570+26)*bitmap2floorplan);
-
-        location_pin.getLocationOnScreen(pin_location);
-
-        Handler Update_location_Handler = new Handler();
-        Runnable Update_location_Runnable = new Runnable() {
-            @Override
-            public void run() {
-                if (Running && (pin_location[1] < testing_i)){
-                    Update_location_Handler.postDelayed(this,1000);
-
-                    path.moveTo(1174, path_y);
-                    testing_j += 20;
-                    path_y += 59.88;
-
-                    location_pin.setY(testing_j);
-                    location_pin.getLocationOnScreen(pin_location);
-
-                    Log.d(TAG,"Current location: "+pin_location[0]+", "+pin_location[1]);
-                    path.lineTo(1174, path_y);
-                    temp_canvas.drawPath(path,paint);
-                    floor_plan.setImageBitmap(temp_bitmap);
-                } else {
-                    Update_location_Handler.removeCallbacks(this);
-                }
-            }
-        };
-        Update_location_Handler.postDelayed(Update_location_Runnable,1000);
-         */
-
         Handler Update_Location_Handler = new Handler();
         Runnable Update_Location_Runnable = new Runnable() {
             @SuppressLint("ResourceType")
@@ -325,20 +306,44 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
 
                     if (Calculated_coordinates[0] != null && Calculated_coordinates[1] != null) {
                         //TODO try except for wrong format
-                        LocationX.setText(String.format("%.2f",Double.valueOf(Calculated_coordinates[0])));
-                        //LocationX.setText(Calculated_coordinates[0]);
-                        LocationY.setText(String.format("%.2f",Double.valueOf(Calculated_coordinates[1])));
-                        //LocationY.setText(Calculated_coordinates[1]);
-                        location_pin.setX(convert2coordinatesX(Double.parseDouble(Calculated_coordinates[1])));
-                        location_pin.setY(convert2coordinatesY(Double.parseDouble(Calculated_coordinates[0])));
+
+                        if (start == 0) {
+                            Previous_location_for_line_drawing = Calculated_coordinates;
+                            LocationX.setText(String.format(Locale.getDefault(),
+                                    "%.2f",Double.valueOf(Calculated_coordinates[0])));
+                            LocationY.setText(String.format(Locale.getDefault(),
+                                    "%.2f",Double.valueOf(Calculated_coordinates[1])));
+
+                            location_pin.setX(coordinate_X_to_Pixel(Double.parseDouble(Calculated_coordinates[1])));
+                            location_pin.setY(coordinate_Y_to_Pixel(Double.parseDouble(Calculated_coordinates[0])));
+                            start ++;
+                        } else {
+                            LocationX.setText(String.format(Locale.getDefault(),
+                                    "%.2f",Double.valueOf(Calculated_coordinates[0])));
+                            LocationY.setText(String.format(Locale.getDefault(),
+                                    "%.2f",Double.valueOf(Calculated_coordinates[1])));
+
+                            path.moveTo(coordinate_X_to_bitmap(Double.parseDouble(Previous_location_for_line_drawing[1])),
+                                    coordinate_Y_to_bitmap(Double.parseDouble(Previous_location_for_line_drawing[0])));
+
+                            location_pin.setX(coordinate_X_to_Pixel(Double.parseDouble(Calculated_coordinates[1])));
+                            location_pin.setY(coordinate_Y_to_Pixel(Double.parseDouble(Calculated_coordinates[0])));
+
+                            path.lineTo((float) (coordinate_X_to_bitmap(Double.parseDouble(Calculated_coordinates[1]))),
+                                    (float)(coordinate_Y_to_bitmap(Double.parseDouble(Calculated_coordinates[0]))));
+                            temp_canvas.drawPath(path,paint);
+                            floor_plan.setImageBitmap(temp_bitmap);
+
+                            Previous_location_for_line_drawing = Calculated_coordinates;
+                        }
+
                     }
                 } else {
                     Update_Location_Handler.removeCallbacks(this);
                 }
             }
         };
-        Update_Location_Handler.postDelayed(Update_Location_Runnable,1300);
-
+        Update_Location_Handler.postDelayed(Update_Location_Runnable,1000);
     }
 
     @SuppressLint("MissingPermission")
@@ -351,13 +356,13 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
     }
 
     public void onClickstartLoggingData(View view){
-        Log.d(TAG,"Startlogging");
         EditText url_text = findViewById(R.id.editText_server);
         String url_bit = url_text.getText().toString();
         String url = "http://192.168.86."+url_bit+":5000/server";
         Log.d(TAG,url);
         final OkHttpClient client = new OkHttpClient();
 
+        //TODO use thread
         Handler LogRTT_Handler = new Handler();
         Runnable LogRTT_Runnable = new Runnable() {
             @Override
@@ -365,7 +370,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
                 if (Running){
                     LogRTT_Handler.postDelayed(this,200);
                     List<String> RangingInfo = new ArrayList<>();
-                    for (RangingResult result:Ranging_Results){
+                    for (RangingResult result: Synchronised_RTT){
                         RangingInfo.add(String.valueOf(result.getMacAddress()));
                         RangingInfo.add(String.valueOf(result.getDistanceMm()));
                         RangingInfo.add(String.valueOf(result.getDistanceStdDevMm()));
@@ -375,19 +380,19 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
                     RequestBody RTT_body = new FormBody.Builder()
                             .add("RTT_Timestamp", String.valueOf(RTT_timestamp))
                             .add("RTT_Result", String.valueOf(RangingInfo))
-                            .add("IMU_Timestamp",String.valueOf(IMU_timestamp))
-                            .add("Accx", String.valueOf(LastAccReading[0]))
-                            .add("Accy", String.valueOf(LastAccReading[1]))
-                            .add("Accz", String.valueOf(LastAccReading[2]))
-                            .add("Gyrox", String.valueOf(LastGyroReading[0]))
-                            .add("Gyroy", String.valueOf(LastGyroReading[1]))
-                            .add("Gyroz", String.valueOf(LastGyroReading[2]))
-                            .add("Magx", String.valueOf(LastMagReading[0]))
-                            .add("Magy",String.valueOf(LastMagReading[1]))
-                            .add("Magz",String.valueOf(LastMagReading[2]))
-                            .add("Azimuth",String.valueOf(orientationAngles[0]))
-                            .add("Pitch",String.valueOf(orientationAngles[1]))
-                            .add("Roll",String.valueOf(orientationAngles[2]))
+                            .add("IMU_Timestamp",String.valueOf(Closest_IMU_timestamp))
+                            .add("Accx", String.valueOf(Synchronised_LastAccReading[0]))
+                            .add("Accy", String.valueOf(Synchronised_LastAccReading[1]))
+                            .add("Accz", String.valueOf(Synchronised_LastAccReading[2]))
+                            .add("Gyrox", String.valueOf(Synchronised_LastGyroReading[0]))
+                            .add("Gyroy", String.valueOf(Synchronised_LastGyroReading[1]))
+                            .add("Gyroz", String.valueOf(Synchronised_LastGyroReading[2]))
+                            .add("Magx", String.valueOf(Synchronised_LastMagReading[0]))
+                            .add("Magy",String.valueOf(Synchronised_LastMagReading[1]))
+                            .add("Magz",String.valueOf(Synchronised_LastMagReading[2]))
+                            .add("Azimuth",String.valueOf(Synchronised_orientationAngles[0]))
+                            .add("Pitch",String.valueOf(Synchronised_orientationAngles[1]))
+                            .add("Roll",String.valueOf(Synchronised_orientationAngles[2]))
                             .build();
 
                     Request RTT_request = new Request.Builder()
@@ -405,9 +410,9 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
                         @Override
                         public void onResponse(@NonNull Call call, @NonNull Response response)
                                 throws IOException {
-                            RTT_response = Objects.requireNonNull(response.body()).string();
+                            Location_from_server = Objects.requireNonNull(response.body()).string();
                             response.close();
-                            Calculated_coordinates = RTT_response.split(" ");
+                            Calculated_coordinates = Location_from_server.split(" ");
                         }
                     });
                 } else {
@@ -417,7 +422,6 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         };
 
         Thread IMU_thread = new Thread(() -> {
-            Log.d(TAG, String.valueOf(Running));
             while (Running) {
                 try {
                     Thread.sleep(200);
@@ -458,9 +462,9 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
                     @Override
                     public void onResponse(@NonNull Call call, @NonNull Response response)
                             throws IOException {
+                        String result = Objects.requireNonNull(response.body()).string();
                         response.close();
-                        //String result = Objects.requireNonNull(response.body()).string();
-                        //Log.i("result",result);
+                        Log.i("result",result);
                     }
                 });
             }
@@ -507,23 +511,18 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
 
         switch (sensorEvent.sensor.getType()){
             case Sensor.TYPE_ACCELEROMETER:
-                //Log.d(TAG,"TYPE_ACCELEROMETER: "+sensorEvent.timestamp);
-                //System.arraycopy(sensorEvent.values,0,LastAccReading,0,sensorEvent.values.length);
                 LastAccReading[0] = alpha * LastAccReading[0] + (1-alpha) * sensorEvent.values[0];
                 LastAccReading[1] = alpha * LastAccReading[1] + (1-alpha) * sensorEvent.values[1];
                 LastAccReading[2] = alpha * LastAccReading[2] + (1-alpha) * sensorEvent.values[2];
                 break;
 
             case Sensor.TYPE_MAGNETIC_FIELD:
-                //Log.d(TAG,"TYPE_MAGNETIC_FIELD: "+sensorEvent.timestamp);
-                //System.arraycopy(sensorEvent.values,0,LastMagReading,0,sensorEvent.values.length);
                 LastMagReading[0] = alpha * LastMagReading[0] + (1-alpha) * sensorEvent.values[0];
                 LastMagReading[1] = alpha * LastMagReading[1] + (1-alpha) * sensorEvent.values[1];
                 LastMagReading[2] = alpha * LastMagReading[2] + (1-alpha) * sensorEvent.values[2];
                 break;
 
             case Sensor.TYPE_GYROSCOPE:
-                //Log.d(TAG,"TYPE_GYROSCOPE: "+sensorEvent.timestamp);
                 LastGyroReading[0] = sensorEvent.values[0];
                 LastGyroReading[1] = sensorEvent.values[1];
                 LastGyroReading[2] = sensorEvent.values[2];
@@ -569,7 +568,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
                 }
             }
             //Log.d(TAG,"APs_MacAddress"+"("+APs_MacAddress.size()+")"+": "+APs_MacAddress);
-            Log.d(TAG, "RTT_APs"+"("+RTT_APs.size()+")"+": "+RTT_APs);
+            //Log.d(TAG, "RTT_APs"+"("+RTT_APs.size()+")"+": "+RTT_APs);
         }
     }
 
@@ -577,7 +576,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         //Start next request
         private void queueNextRangingRequest() {
             RangingRequestDelayHandler.postDelayed(
-                    LocalizationActivity.this::startRangingRequest, 100);
+                    LocalisationActivity.this::startRangingRequest, 100);
         }
 
         @Override
@@ -597,6 +596,12 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
                 }
             }
             RTT_timestamp = SystemClock.elapsedRealtimeNanos();
+            Synchronised_RTT = Ranging_Results;
+            Synchronised_orientationAngles = orientationAngles;
+            Synchronised_LastAccReading = LastAccReading;
+            Synchronised_LastGyroReading = LastGyroReading;
+            Synchronised_LastMagReading = LastMagReading;
+            Closest_IMU_timestamp = IMU_timestamp;
             if (Running) {
                 queueNextRangingRequest();
             }

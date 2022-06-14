@@ -131,7 +131,7 @@ public class MainActivity extends AppCompatActivity {
     public void onClickStartPositioning(View view){
         Log.d(TAG,"onClickStartPositioning()");
 
-        Intent intentPositioning = new Intent(getApplicationContext(), LocalizationActivity.class);
+        Intent intentPositioning = new Intent(getApplicationContext(), LocalisationActivity.class);
         intentPositioning.putParcelableArrayListExtra("SCAN_RESULT",AP_list_support_RTT);
         startActivity(intentPositioning);
     }
