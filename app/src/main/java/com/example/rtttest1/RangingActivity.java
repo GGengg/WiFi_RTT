@@ -110,6 +110,7 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
     private Button logging_button_text;
 
     int Check_Point_Counts = 0;
+    Boolean First_measurement = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -287,6 +288,7 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
                             .add("Azimuth",String.valueOf(Synchronised_orientationAngles[0]))
                             .add("Pitch",String.valueOf(Synchronised_orientationAngles[1]))
                             .add("Roll",String.valueOf(Synchronised_orientationAngles[2]))
+                            .add("Points",String.valueOf(Check_Point_Counts))
                             .build();
 
                     Request RTT_request = new Request.Builder()
@@ -315,6 +317,7 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
                 }
             }
         };
+
         LogRTT_Handler.postDelayed(LogRTT_Runnable,1000);
         logging = !logging;
 
@@ -380,9 +383,14 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
 
         switch (sensorEvent.sensor.getType()){
             case Sensor.TYPE_ACCELEROMETER:
+                /*
                 LastAccReading[0] = alpha * LastAccReading[0] + (1-alpha) * sensorEvent.values[0];
                 LastAccReading[1] = alpha * LastAccReading[1] + (1-alpha) * sensorEvent.values[1];
                 LastAccReading[2] = alpha * LastAccReading[2] + (1-alpha) * sensorEvent.values[2];
+                 */
+                LastAccReading[0] = sensorEvent.values[0];
+                LastAccReading[1] = sensorEvent.values[1];
+                LastAccReading[2] = sensorEvent.values[2];
 
                 String AccX = this.getString(R.string.AccelerometerX,LastAccReading[0]);
                 String AccY = this.getString(R.string.AccelerometerY,LastAccReading[1]);
@@ -393,9 +401,15 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
                 break;
 
             case Sensor.TYPE_MAGNETIC_FIELD:
+                /*
                 LastMagReading[0] = alpha * LastMagReading[0] + (1-alpha) * sensorEvent.values[0];
                 LastMagReading[1] = alpha * LastMagReading[1] + (1-alpha) * sensorEvent.values[1];
                 LastMagReading[2] = alpha * LastMagReading[2] + (1-alpha) * sensorEvent.values[2];
+                 */
+
+                LastMagReading[0] = sensorEvent.values[0];
+                LastMagReading[1] = sensorEvent.values[1];
+                LastMagReading[2] = sensorEvent.values[2];
 
                 String MagX = this.getString(R.string.Magnetic_FieldX,LastMagReading[0]);
                 String MagY = this.getString(R.string.Magnetic_FieldY,LastMagReading[1]);
