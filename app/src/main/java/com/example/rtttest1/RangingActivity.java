@@ -16,6 +16,7 @@ import android.net.wifi.rtt.RangingResult;
 import android.net.wifi.rtt.RangingResultCallback;
 import android.net.wifi.rtt.WifiRttManager;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.util.Log;
@@ -32,9 +33,13 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.snackbar.Snackbar;
+import com.opencsv.CSVWriter;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -81,6 +86,7 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
     private final float[] rotationMatrix = new float[9];
     private final float[] inclinationMatrix = new float[9];
     private final float[] orientationAngles = new float[3];
+    private float[] previous_orientationAngles = new float[3];
     private float[] Synchronised_orientationAngles = new float[3];
 
     private final float[] LastAccReading = new float[3];
@@ -111,6 +117,8 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
 
     int Check_Point_Counts = 0;
     Boolean First_measurement = true;
+
+    FileWriter writer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -178,6 +186,16 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
             //Start
             registerSensors();
             startRangingRequest();
+            //writeCSV();
+
+            /*
+            Log.d(TAG, String.valueOf(this.getExternalFilesDir(null)));
+            try {
+                writer = new FileWriter(new File(this.getExternalFilesDir(null).getAbsolutePath(), "data.csv"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+             */
         }
     }
 
@@ -436,6 +454,16 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
                 LastAccReading, LastMagReading);
         // Express the updated rotation matrix as three orientation angles.
         SensorManager.getOrientation(rotationMatrix, orientationAngles);
+
+        if (First_measurement){
+            previous_orientationAngles = orientationAngles;
+            First_measurement = false;
+        } else {
+            orientationAngles[0] = alpha*previous_orientationAngles[0]+(1-alpha)*orientationAngles[0];
+            orientationAngles[1] = alpha*previous_orientationAngles[1]+(1-alpha)*orientationAngles[1];
+            orientationAngles[2] = alpha*previous_orientationAngles[2]+(1-alpha)*orientationAngles[2];
+            previous_orientationAngles = orientationAngles;
+        }
     }
 
     @Override
@@ -513,6 +541,27 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
         }
     }
 
+    public void WriteCSV(){
+        String csv = (Environment.getExternalStorageDirectory().getAbsolutePath() + "/RTTIMU.csv");
+        Log.d(TAG,csv);
+        CSVWriter writer = null;
+        try{
+            writer = new CSVWriter(new FileWriter(csv));
+
+            List<String[]> data = new ArrayList<String[]>();
+            data.add(new String[]{"A","B"});
+            data.add(new String[]{"C","D"});
+
+            writer.writeAll(data);
+
+            writer.close();
+            //callRead();
+        } catch (IOException e){
+            e.printStackTrace();
+        }
+    }
+
+    //For earphone remote control
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event){
         if (keyCode == 85){
