@@ -498,7 +498,6 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
             Log.d(TAG,"APs_MacAddress"+"("+APs_MacAddress.size()+")"+": "+APs_MacAddress);
             Log.d(TAG, "RTT_APs"+"("+RTT_APs.size()+")"+": "+RTT_APs);
         }
-
     }
 
     private class RTTRangingResultCallback extends RangingResultCallback {

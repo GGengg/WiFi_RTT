@@ -8,7 +8,8 @@
     <string name="Ranging">Ranging</string>
     <string name="SSIDHeader">SSID</string>
     <string name="BSSIDHeader">BSSID</string>
-    <string name="StartPositioningButton">Start Positioning</string>
+    <string name="StartPositioningButton">Start Positioning Office</string>
+    <string name="StartPositioningMechanical">Start Positioning Mechanical</string>
 
     <!-- LocationPermissionRequest -->
     <string name="ActivityPermissionRequestLabel">Location permission request</string>

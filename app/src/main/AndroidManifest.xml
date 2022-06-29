@@ -58,6 +58,10 @@
             android:parentActivityName=".RangingActivity">
         </activity>
 
+        <activity android:name=".LocalisationActivity_mechanical">
+
+        </activity>
+
     </application>
 
 </manifest>
