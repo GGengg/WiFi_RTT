@@ -23,6 +23,7 @@
     <string name="DelayBeforeNextRequest">RTT Ranging Delay (ms)</string>
     <string name="DelayHint">1000</string>
     <string name="LogButton">Start logging</string>
+    <string name="LogButtonCsv">Export data</string>
     <string name="RangeHeader">Range(mm)</string>
     <string name="Range_SDHeader">Range_SD(mm)</string>
     <string name="RSSHeader">RSS(dB)</string>
