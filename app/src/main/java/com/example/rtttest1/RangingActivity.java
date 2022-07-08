@@ -51,6 +51,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 //TODO Try different layout view(linear?)
+//TODO skipped frames, might be doing too much work on the main thread
 /**
  * Send ranging requests and display distance and RSSI values
  */
@@ -260,7 +261,6 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
         Runnable LogRTT_Runnable = new Runnable() {
             @Override
             public void run() {
-                Log.d(TAG,String.valueOf(logging && activity_running));
                 if (logging && activity_running){
 
                     //rate of RTT packet sending(optimal is 200)
@@ -386,12 +386,13 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
         try{
             //save file in device
             FileOutputStream out = openFileOutput("data.scv", Context.MODE_PRIVATE);
+
             out.write((rtt_body.toString()).getBytes());
             out.close();
 
             //export
             Context context = getApplicationContext();
-            File filelocation = new File(getFilesDir(),"data.scv");
+            File filelocation = new File(getFilesDir(),"data.csv");
             Uri path = FileProvider.getUriForFile(context,"com.example.exportcsv.fileprovider",filelocation);
             Intent fileIntent = new Intent(Intent.ACTION_SEND);
             fileIntent.setType("text/csv");
