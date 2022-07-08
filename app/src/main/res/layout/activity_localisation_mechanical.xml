@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+    <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+    <RelativeLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" >
+
+        <TextView
+            android:id="@+id/textViewLocationX"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_marginTop="330dp"
+            android:rotation="90"
+            android:text="LocationX" />
+
+        <TextView
+            android:id="@+id/textViewLocationY"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_marginBottom="330dp"
+            android:rotation="90"
+            android:text="LocationY" />
+
+        <EditText
+            android:id="@+id/editText_server"
+            android:layout_width="68dp"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:inputType="number" />
+
+        <Button
+            android:id="@+id/button2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="200dp"
+            android:onClick="onClickstartLoggingData"/>
+
+    </RelativeLayout>
+
+        <ImageView
+            android:id="@+id/imageViewFloorplan"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:adjustViewBounds="true"
+            android:contentDescription="@string/FloorPlanContentDescription"
+            android:scaleType="fitXY"
+            android:src="@drawable/mechanical" />
+
+        <ImageView
+            android:id="@+id/imageViewLocationPin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/LocationPinContentDescription"
+            android:rotation="90"
+            app:srcCompat="@drawable/location_pin" />
+
+        <ImageView
+            android:id="@+id/imageViewAP1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/APContentDescription"
+            android:rotation="90"
+            app:srcCompat="@drawable/ap_pin" />
+
+        <ImageView
+            android:id="@+id/imageViewAP2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/APContentDescription"
+            android:rotation="90"
+            app:srcCompat="@drawable/ap_pin" />
+
+        <ImageView
+            android:id="@+id/imageViewAP3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/APContentDescription"
+            android:rotation="90"
+            app:srcCompat="@drawable/ap_pin" />
+
+        <ImageView
+            android:id="@+id/imageViewAP4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/APContentDescription"
+            android:rotation="90"
+            app:srcCompat="@drawable/ap_pin" />
+
+        <ImageView
+            android:id="@+id/imageViewAP5"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/APContentDescription"
+            android:rotation="90"
+            app:srcCompat="@drawable/ap_pin" />
+
+        <ImageView
+            android:id="@+id/imageViewAP6"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/APContentDescription"
+            android:rotation="90"
+            app:srcCompat="@drawable/ap_pin" />
+
+        <ImageView
+            android:id="@+id/imageViewAP7"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/APContentDescription"
+            android:rotation="90"
+            app:srcCompat="@drawable/ap_pin" />
+
+        <ImageView
+            android:id="@+id/imageViewAP8"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/APContentDescription"
+            android:rotation="90"
+            app:srcCompat="@drawable/ap_pin" />
+
+    </FrameLayout>
+

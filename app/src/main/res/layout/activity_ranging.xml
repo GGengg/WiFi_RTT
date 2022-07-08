@@ -174,7 +174,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
-        android:layout_marginEnd="48dp"
+        android:layout_marginEnd="32dp"
         android:onClick="onClickBackgroundScan"
         android:text="@string/BackgroundScanButton"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -183,7 +183,7 @@
 
     <Button
         android:id="@+id/btnLogRTT"
-        android:layout_width="wrap_content"
+        android:layout_width="140dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
         android:onClick="onClickLogData"
@@ -214,6 +214,26 @@
         android:text="@string/ServerURLbit"
         app:layout_constraintBottom_toTopOf="@+id/textViewDelayBeforeNextRequest"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/textViewCheckPointCount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="80dp"
+        android:layout_marginBottom="32dp"
+        android:text="@string/CheckPointCounts"
+        app:layout_constraintBottom_toTopOf="@+id/textViewServerURL"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/textViewCounts"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="96dp"
+        android:layout_marginBottom="16dp"
+        android:text="0"
+        app:layout_constraintBottom_toTopOf="@+id/editTextServer"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!--
         <EditText

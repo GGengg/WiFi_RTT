@@ -27,6 +27,20 @@
             android:rotation="90"
             android:text="LocationY" />
 
+        <EditText
+            android:id="@+id/editText_server"
+            android:layout_width="68dp"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:inputType="number" />
+
+        <Button
+            android:id="@+id/button2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="200dp"
+            android:onClick="onClickstartLoggingData"/>
+
     </RelativeLayout>
 
         <ImageView
@@ -89,6 +103,22 @@
 
         <ImageView
             android:id="@+id/imageViewAP6"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/APContentDescription"
+            android:rotation="90"
+            app:srcCompat="@drawable/ap_pin" />
+
+        <ImageView
+            android:id="@+id/imageViewAP7"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/APContentDescription"
+            android:rotation="90"
+            app:srcCompat="@drawable/ap_pin" />
+
+        <ImageView
+            android:id="@+id/imageViewAP8"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:contentDescription="@string/APContentDescription"

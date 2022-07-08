@@ -1,2 +1,2 @@
 # WiFi_RTT
-Use WiFi RTT to locate android device and upload to a server via HTTP.
+A demonstration of RTT-based indoor localisation on Android device.

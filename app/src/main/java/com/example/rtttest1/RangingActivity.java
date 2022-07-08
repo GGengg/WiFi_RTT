@@ -19,25 +19,22 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.google.android.material.snackbar.Snackbar;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
-
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.FormBody;
@@ -46,12 +43,12 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-//TODO put common class in service?
 //TODO Try different layout view(linear?)
 /**
  * Send ranging requests and display distance and RSSI values
  */
 public class RangingActivity extends AppCompatActivity implements SensorEventListener{
+
     private static final String TAG = "RangingActivity";
 
     //RTT
@@ -61,9 +58,13 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
     private WifiScanReceiver myWifiScanReceiver;
     private RangingActivityAdapter rangingActivityAdapter;
 
-    List<ScanResult> RTT_APs = new ArrayList<>();
-    List<RangingResult> Ranging_Results = new ArrayList<>();
+    //TODO make this list global
+    private List<ScanResult> RTT_APs = new ArrayList<>();
+    private final List<RangingResult> Ranging_Results = new ArrayList<>();
     private final List<String> APs_MacAddress = new ArrayList<>();
+    private List<RangingResult> Synchronised_RTT = new ArrayList<>();
+
+    private long RTT_timestamp;
 
     final Handler RangingRequestDelayHandler = new Handler();
 
@@ -74,11 +75,21 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
     private final float[] rotationMatrix = new float[9];
     private final float[] inclinationMatrix = new float[9];
     private final float[] orientationAngles = new float[3];
+    private float[] previous_orientationAngles = new float[3];
+    private float[] Synchronised_orientationAngles = new float[3];
+
     private final float[] LastAccReading = new float[3];
     private final float[] LastMagReading = new float[3];
     private final float[] LastGyroReading = new float[3];
+    private float[] Synchronised_LastAccReading = new float[3];
+    private float[] Synchronised_LastMagReading = new float[3];
+    private float[] Synchronised_LastGyroReading = new float[3];
 
-    private Boolean Running = true;
+    private long IMU_timestamp;
+    private long Closest_IMU_timestamp;
+
+    private Boolean activity_running = true;
+    private Boolean logging = false;
 
     //Ranging layout
 
@@ -86,15 +97,15 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
     private static final int RangingDelayDefault = 100;
     private int RangingDelay;
 
-    private TextView textAccx;
-    private TextView textAccy;
-    private TextView textAccz;
-    private TextView textGrox;
-    private TextView textGroy;
-    private TextView textGroz;
-    private TextView textMagx;
-    private TextView textMagy;
-    private TextView textMagz;
+    private TextView textAccx, textAccy, textAccz;
+    private TextView textGrox, textGroy, textGroz;
+    private TextView textMagx, textMagy, textMagz;
+
+    private TextView Counts;
+    private Button logging_button_text;
+
+    int Check_Point_Counts = 0;
+    private Boolean First_measurement = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -156,6 +167,9 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
             sensors.put("Accelerometer",sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER));
             sensors.put("Gyroscope",sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE));
 
+            Counts = findViewById(R.id.textViewCounts);
+            logging_button_text = findViewById(R.id.btnLogRTT);
+
             //Start
             registerSensors();
             startRangingRequest();
@@ -194,100 +208,58 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
     }
 
     public void onClickBackgroundScan(View view){
+        view.setEnabled(false);
         Snackbar.make(view,"Start scanning in background",Snackbar.LENGTH_SHORT).show();
         Handler Update_Handler = new Handler();
         Runnable Update_Runnable = new Runnable() {
             @Override
             public void run() {
-                if (!Running || (APs_MacAddress.size()==6)){
-                    Update_Handler.removeCallbacks(this);
-                } else{
+                if (activity_running && (APs_MacAddress.size() < 8)){
                     //background scan rate
                     Update_Handler.postDelayed(this,3000);
-
                     myWifiManager.startScan();
+                } else{
+                    Update_Handler.removeCallbacks(this);
                 }
             }
         };
         Update_Handler.postDelayed(Update_Runnable,1000);
-        //TODO this handler affects http performance
     }
 
     public void onClickLogData(View view){
-        Snackbar.make(view,"Start sending data",Snackbar.LENGTH_SHORT).show();
+        //TODO editText
+        //TODO will AsyncTask/Thread/Queue work better?
+        Log.d(TAG,"logging: "+logging+" activity running: "+activity_running);
 
         EditText url_text = findViewById(R.id.editTextServer);
         String url_bit = url_text.getText().toString();
         String url = "http://192.168.86." + url_bit + ":5000/server";
-        //TODO editText
 
         final OkHttpClient client = new OkHttpClient();
 
-        //TODO will AsyncTask/Thread/Queue work better?
+        if (!logging) {
+            Snackbar.make(view,"Start sending data",Snackbar.LENGTH_SHORT).show();
+            logging_button_text.setText(R.string.StopLoggingButtonPressed);
 
-        /*
-        Thread RTT_thread = new Thread(() -> {
-            while (Running) {
-                RangingInfo.clear();
-                //rate of RTT packet sending(optimal is 200)
-                try {
-                    Thread.sleep(200);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                Log.d(TAG,"1");
+        } else {
+            Snackbar.make(view,"Stop sending data",Snackbar.LENGTH_SHORT).show();
+            logging_button_text.setText(R.string.StartLoggingButtonPressed);
+        }
 
-                for (RangingResult rangingResult: Ranging_Result){
-                    RangingInfo.add(String.valueOf(rangingResult.getMacAddress()));
-                    RangingInfo.add(String.valueOf(rangingResult.getDistanceMm()));
-                    RangingInfo.add(String.valueOf(rangingResult.getDistanceStdDevMm()));
-                    RangingInfo.add(String.valueOf(rangingResult.getRssi()));
-                }
-                Log.d(TAG,"2");
+        Log.d(TAG,"logging: "+logging+" activity running: "+activity_running);
 
-                RequestBody RTT_body = new FormBody.Builder()
-                        .add("Flag","RTT")
-                        .add("Timestamp", String.valueOf(SystemClock.elapsedRealtime()))
-                        .add("RTT_Result", String.valueOf(RangingInfo))
-                        .build();
-
-                Request RTT_request = new Request.Builder()
-                        .url(url)
-                        .post(RTT_body)
-                        .build();
-
-                final Call call = client.newCall(RTT_request);
-
-                call.enqueue(new Callback() {
-                    @Override
-                    public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                        Log.i("onFailure", e.getMessage());
-                    }
-
-                    @Override
-                    public void onResponse(@NonNull Call call, @NonNull Response response)
-                            throws IOException {
-                        String result = response.body().string();
-                        response.close();
-                        Log.i("result",result);
-                    }
-                });
-            }
-        });
-        RTT_thread.start();
-         */
         Handler LogRTT_Handler = new Handler();
         Runnable LogRTT_Runnable = new Runnable() {
             @Override
             public void run() {
-                if (!Running){
-                    LogRTT_Handler.removeCallbacks(this);
-                } else{
+                Log.d(TAG,String.valueOf(logging && activity_running));
+                if (logging && activity_running){
+
                     //rate of RTT packet sending(optimal is 200)
-                    LogRTT_Handler.postDelayed(this,200);
+                    LogRTT_Handler.postDelayed(this,100);
 
                     List<String> RangingInfo = new ArrayList<>();
-                    for (RangingResult rangingResult: Ranging_Results){
+                    for (RangingResult rangingResult: Synchronised_RTT){
                         RangingInfo.add(String.valueOf(rangingResult.getMacAddress()));
                         RangingInfo.add(String.valueOf(rangingResult.getDistanceMm()));
                         RangingInfo.add(String.valueOf(rangingResult.getDistanceStdDevMm()));
@@ -295,9 +267,22 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
                     }
 
                     RequestBody RTT_body = new FormBody.Builder()
-                            .add("Flag","RTT")
-                            .add("Timestamp", String.valueOf(SystemClock.elapsedRealtime()))
+                            .add("RTT_Timestamp", String.valueOf(RTT_timestamp))
                             .add("RTT_Result", String.valueOf(RangingInfo))
+                            .add("IMU_Timestamp",String.valueOf(Closest_IMU_timestamp))
+                            .add("Accx", String.valueOf(Synchronised_LastAccReading[0]))
+                            .add("Accy", String.valueOf(Synchronised_LastAccReading[1]))
+                            .add("Accz", String.valueOf(Synchronised_LastAccReading[2]))
+                            .add("Gyrox", String.valueOf(Synchronised_LastGyroReading[0]))
+                            .add("Gyroy", String.valueOf(Synchronised_LastGyroReading[1]))
+                            .add("Gyroz", String.valueOf(Synchronised_LastGyroReading[2]))
+                            .add("Magx", String.valueOf(Synchronised_LastMagReading[0]))
+                            .add("Magy",String.valueOf(Synchronised_LastMagReading[1]))
+                            .add("Magz",String.valueOf(Synchronised_LastMagReading[2]))
+                            .add("Azimuth",String.valueOf(Synchronised_orientationAngles[0]))
+                            .add("Pitch",String.valueOf(Synchronised_orientationAngles[1]))
+                            .add("Roll",String.valueOf(Synchronised_orientationAngles[2]))
+                            .add("Points",String.valueOf(Check_Point_Counts))
                             .build();
 
                     Request RTT_request = new Request.Builder()
@@ -305,6 +290,7 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
                             .post(RTT_body)
                             .build();
 
+                    //TODO use retrofit rather rolling own requests
                     final Call call = client.newCall(RTT_request);
                     call.enqueue(new Callback() {
                         @Override
@@ -315,16 +301,24 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
                         @Override
                         public void onResponse(@NonNull Call call, @NonNull Response response)
                                 throws IOException {
-                            String result = Objects.requireNonNull(response.body()).string();
+                            //String result = Objects.requireNonNull(response.body()).string();
                             response.close();
-                            Log.i("result",result);
+                            //Log.i("result",result);
                         }
                     });
+                } else {
+                    LogRTT_Handler.removeCallbacks(this);
                 }
             }
         };
+
+        LogRTT_Handler.postDelayed(LogRTT_Runnable,1000);
+        logging = !logging;
+
+        Log.d(TAG,"logging: "+logging+" activity running: "+activity_running);
+        /*
         Thread IMU_thread = new Thread(() -> {
-            while (Running) {
+            while (activity_running) {
                 try {
                     Thread.sleep(50);
                 } catch (InterruptedException e) {
@@ -370,125 +364,64 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
                 });
             }
         });
-        IMU_thread.start();
+        //IMU_thread.start();
 
-        /*
-        Handler LogIMU_Handler = new Handler();
-        Runnable LogIMU_Runnable = new Runnable() {
-            @Override
-            public void run() {
-                if (!Running){
-                    LogIMU_Handler.removeCallbacks(this);
-                } else {
-                    LogIMU_Handler.postDelayed(this,50);
-                    RequestBody IMU_Body = new FormBody.Builder()
-                            .add("Flag","IMU")
-                            .add("Timestamp",String.valueOf(SystemClock.elapsedRealtimeNanos()))
-                            .add("Accx", String.valueOf(LastAccReading[0]))
-                            .add("Accy", String.valueOf(LastAccReading[1]))
-                            .add("Accz", String.valueOf(LastAccReading[2]))
-                            .add("Gyrox", String.valueOf(LastGyroReading[0]))
-                            .add("Gyroy", String.valueOf(LastGyroReading[1]))
-                            .add("Gyroz", String.valueOf(LastGyroReading[2]))
-                            .add("Magx", String.valueOf(LastMagReading[0]))
-                            .add("Magy",String.valueOf(LastMagReading[1]))
-                            .add("Magz",String.valueOf(LastMagReading[2]))
-                            .add("Azimuth",String.valueOf(orientationAngles[0]))
-                            .add("Pitch",String.valueOf(orientationAngles[1]))
-                            .add("Roll",String.valueOf(orientationAngles[2]))
-                            .build();
-
-                    Request IMU_Request = new Request.Builder()
-                            .url(url)
-                            .post(IMU_Body)
-                            .build();
-
-                    final Call call = client.newCall(IMU_Request);
-
-                    call.enqueue(new Callback() {
-                        @Override
-                        public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                            Log.i("onFailure",e.getMessage());
-                        }
-
-                        @Override
-                        public void onResponse(@NonNull Call call, @NonNull Response response)
-                                throws IOException {
-                            Log.i("result",response.body().string());
-                            response.close();
-                        }
-                    });
-                }
-            }
-        };
-        //wait x ms (only once) before running
-
-        LogIMU_Handler.postDelayed(LogIMU_Runnable,1000);
 
          */
-        LogRTT_Handler.postDelayed(LogRTT_Runnable,1000);
     }
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
-        //final float alpha = 0.97f;
+        final float alpha = 0.97f;
+        IMU_timestamp = SystemClock.elapsedRealtimeNanos();
 
         switch (sensorEvent.sensor.getType()){
             case Sensor.TYPE_ACCELEROMETER:
-                //Log.d(TAG,"ACC: "+Acc_current_time);
-                LastAccReading[0] = sensorEvent.values[0];
-                LastAccReading[1] = sensorEvent.values[1];
-                LastAccReading[2] = sensorEvent.values[2];
                 /*
                 LastAccReading[0] = alpha * LastAccReading[0] + (1-alpha) * sensorEvent.values[0];
                 LastAccReading[1] = alpha * LastAccReading[1] + (1-alpha) * sensorEvent.values[1];
                 LastAccReading[2] = alpha * LastAccReading[2] + (1-alpha) * sensorEvent.values[2];
-
                  */
-                /*
+                LastAccReading[0] = sensorEvent.values[0];
+                LastAccReading[1] = sensorEvent.values[1];
+                LastAccReading[2] = sensorEvent.values[2];
+
                 String AccX = this.getString(R.string.AccelerometerX,LastAccReading[0]);
                 String AccY = this.getString(R.string.AccelerometerY,LastAccReading[1]);
                 String AccZ = this.getString(R.string.AccelerometerZ,LastAccReading[2]);
                 textAccx.setText(AccX);
                 textAccy.setText(AccY);
                 textAccz.setText(AccZ);
-                 */
                 break;
 
             case Sensor.TYPE_MAGNETIC_FIELD:
-                //Log.d(TAG, "MAG: "+ Mag_current_time);
-                LastMagReading[0] = sensorEvent.values[0];
-                LastMagReading[1] = sensorEvent.values[1];
-                LastMagReading[2] = sensorEvent.values[2];
                 /*
                 LastMagReading[0] = alpha * LastMagReading[0] + (1-alpha) * sensorEvent.values[0];
                 LastMagReading[1] = alpha * LastMagReading[1] + (1-alpha) * sensorEvent.values[1];
                 LastMagReading[2] = alpha * LastMagReading[2] + (1-alpha) * sensorEvent.values[2];
-
                  */
-                /*
+                LastMagReading[0] = sensorEvent.values[0];
+                LastMagReading[1] = sensorEvent.values[1];
+                LastMagReading[2] = sensorEvent.values[2];
+
                 String MagX = this.getString(R.string.Magnetic_FieldX,LastMagReading[0]);
                 String MagY = this.getString(R.string.Magnetic_FieldY,LastMagReading[1]);
                 String MagZ = this.getString(R.string.Magnetic_FieldZ,LastMagReading[2]);
                 textMagx.setText(MagX);
                 textMagy.setText(MagY);
                 textMagz.setText(MagZ);
-                 */
                 break;
 
             case Sensor.TYPE_GYROSCOPE:
-                //Log.d(TAG,"GYRO: "+ Gyro_current_time);
                 LastGyroReading[0] = sensorEvent.values[0];
                 LastGyroReading[1] = sensorEvent.values[1];
                 LastGyroReading[2] = sensorEvent.values[2];
-                /*
                 String GyroX = this.getString(R.string.GyroscopeX,LastGyroReading[0]);
                 String GyroY = this.getString(R.string.GyroscopeY,LastGyroReading[1]);
                 String GyroZ = this.getString(R.string.GyroscopeZ,LastGyroReading[2]);
                 textGrox.setText(GyroX);
                 textGroy.setText(GyroY);
                 textGroz.setText(GyroZ);
-                 */
         }
 
         // Rotation matrix based on current readings from accelerometer and magnetometer.
@@ -496,6 +429,16 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
                 LastAccReading, LastMagReading);
         // Express the updated rotation matrix as three orientation angles.
         SensorManager.getOrientation(rotationMatrix, orientationAngles);
+
+        if (First_measurement){
+            previous_orientationAngles = orientationAngles;
+            First_measurement = false;
+        } else {
+            orientationAngles[0] = alpha*previous_orientationAngles[0]+(1-alpha)*orientationAngles[0];
+            orientationAngles[1] = alpha*previous_orientationAngles[1]+(1-alpha)*orientationAngles[1];
+            orientationAngles[2] = alpha*previous_orientationAngles[2]+(1-alpha)*orientationAngles[2];
+            previous_orientationAngles = orientationAngles;
+        }
     }
 
     @Override
@@ -530,7 +473,6 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
             Log.d(TAG,"APs_MacAddress"+"("+APs_MacAddress.size()+")"+": "+APs_MacAddress);
             Log.d(TAG, "RTT_APs"+"("+RTT_APs.size()+")"+": "+RTT_APs);
         }
-
     }
 
     private class RTTRangingResultCallback extends RangingResultCallback {
@@ -543,7 +485,7 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
         @Override
         public void onRangingFailure(int i) {
             Log.d(TAG,"Ranging failed！");
-            if (Running) {
+            if (activity_running) {
                 queueNextRangingRequest();
             }
         }
@@ -557,14 +499,32 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
                     temp_result.add(result);
                 }
             }
-            if (Running) {
+            RTT_timestamp = SystemClock.elapsedRealtimeNanos();
+            Synchronised_RTT = temp_result;
+            Synchronised_orientationAngles = orientationAngles;
+            Synchronised_LastAccReading = LastAccReading;
+            Synchronised_LastGyroReading = LastGyroReading;
+            Synchronised_LastMagReading = LastMagReading;
+            Closest_IMU_timestamp = IMU_timestamp;
+
+            if (activity_running) {
                 if (!temp_result.isEmpty()){
                     rangingActivityAdapter.swapData(temp_result);
                 }
-                //Log.d(TAG, Ranging_Results.size()+String.valueOf(Ranging_Results));
                 queueNextRangingRequest();
             }
         }
+    }
+
+    //For earphone remote control
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event){
+        if (keyCode == 85){
+            Toast.makeText(getApplicationContext(),"key pressed :)",Toast.LENGTH_SHORT).show();
+            Check_Point_Counts ++;
+            Counts.setText(String.valueOf(Check_Point_Counts));
+        }
+        return super.onKeyDown(keyCode,event);
     }
 
     @Override
@@ -573,7 +533,7 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
         super.onStop();
         unregisterSensors();
         unregisterReceiver(myWifiScanReceiver);
-        Running = false;
+        activity_running = false;
     }
 
     protected void onResume() {
@@ -581,6 +541,6 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
         super.onResume();
         registerSensors();
         //registerReceiver(myWifiScanReceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
-        Running = true;
+        activity_running = true;
     }
 }

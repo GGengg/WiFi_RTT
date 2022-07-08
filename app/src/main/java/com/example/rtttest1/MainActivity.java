@@ -21,14 +21,12 @@ import android.content.pm.PackageManager;
 import java.util.ArrayList;
 import java.util.List;
 
-//TODO public or private
-
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
     private boolean LocationPermission = false;
 
-    ArrayList<ScanResult> AP_list_support_RTT;
+    private ArrayList<ScanResult> AP_list_support_RTT;
 
     private WifiManager myWifiManager;
     private WifiScanReceiver myWifiReceiver;
@@ -55,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //TODO make this class a common service
-    public class WifiScanReceiver extends BroadcastReceiver {
+    private class WifiScanReceiver extends BroadcastReceiver {
         private List<ScanResult> findRTTAPs(@NonNull List<ScanResult> WiFiScanResults) {
             List<ScanResult> RTT_APs = new ArrayList<>();
             for (ScanResult scanresult:WiFiScanResults) {
@@ -63,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
                     RTT_APs.add(scanresult);
                 }
             }
+            //MaxPeer is 10
             return RTT_APs;
         }
 
@@ -83,7 +82,6 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG,"No RTT APs available");
             }
         }
-        //TODO maxpeers
     }
 
     public void onClickScanAPs(View view) {
@@ -131,7 +129,17 @@ public class MainActivity extends AppCompatActivity {
     public void onClickStartPositioning(View view){
         Log.d(TAG,"onClickStartPositioning()");
 
-        Intent intentPositioning = new Intent(getApplicationContext(), LocalizationActivity.class);
+        Intent intentPositioning = new Intent(getApplicationContext(),
+                LocalisationActivity.class);
+        intentPositioning.putParcelableArrayListExtra("SCAN_RESULT",AP_list_support_RTT);
+        startActivity(intentPositioning);
+    }
+
+    public void onClickStartPositioningMechanical(View view){
+        Log.d(TAG,"onClickStartPositioningMechanical()");
+
+        Intent intentPositioning = new Intent(getApplicationContext(),
+                LocalisationActivity_mechanical.class);
         intentPositioning.putParcelableArrayListExtra("SCAN_RESULT",AP_list_support_RTT);
         startActivity(intentPositioning);
     }

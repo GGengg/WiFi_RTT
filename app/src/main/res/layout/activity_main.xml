@@ -31,7 +31,6 @@
         app:layout_constraintTop_toTopOf="parent" />
         -->
 
-
     <Button
         android:id="@+id/btn2ScanAPs"
         android:layout_width="110dp"
@@ -92,6 +91,17 @@
         android:layout_marginBottom="8dp"
         android:onClick="onClickStartPositioning"
         android:text="@string/StartPositioningButton"
+        app:layout_constraintBottom_toTopOf="@+id/startPositioningMechanical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/startPositioningMechanical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:onClick="onClickStartPositioningMechanical"
+        android:text="@string/StartPositioningMechanical"
         app:layout_constraintBottom_toTopOf="@+id/btn1CheckRTT"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />

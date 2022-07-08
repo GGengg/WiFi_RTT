@@ -1,12 +1,12 @@
 package com.example.rtttest1;
 
-public class AccessPoints {
+public class AccessPoint {
     private final String BSSID;
     private final double x;
     private final double y;
 
     //Constructor
-    public AccessPoints(String BSSID, double x, double y) {
+    public AccessPoint(String BSSID, double x, double y) {
         this.BSSID = BSSID;
         this.x = x;
         this.y = y;

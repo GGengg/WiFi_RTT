@@ -8,7 +8,8 @@
     <string name="Ranging">Ranging</string>
     <string name="SSIDHeader">SSID</string>
     <string name="BSSIDHeader">BSSID</string>
-    <string name="StartPositioningButton">Start Positioning</string>
+    <string name="StartPositioningButton">Start Positioning Office</string>
+    <string name="StartPositioningMechanical">Start Positioning Mechanical</string>
 
     <!-- LocationPermissionRequest -->
     <string name="ActivityPermissionRequestLabel">Location permission request</string>
@@ -21,7 +22,7 @@
     <string name="ActivityRangingLabel">Show ranging results</string>
     <string name="DelayBeforeNextRequest">RTT Ranging Delay (ms)</string>
     <string name="DelayHint">1000</string>
-    <string name="LogButton">Log data</string>
+    <string name="LogButton">Start logging</string>
     <string name="RangeHeader">Range(mm)</string>
     <string name="Range_SDHeader">Range_SD(mm)</string>
     <string name="RSSHeader">RSS(dB)</string>
@@ -39,14 +40,17 @@
     <string name="GyroscopeY">Y: %1$f</string>
     <string name="GyroscopeZ">Z: %1$f</string>
     <string name="ServerURLbit">Please enter URL</string>
+    <string name="CheckPointCounts">Check Point</string>
 
-    <!-- LocalizationActivity -->
-    <string name="ActivityLocalizationLabel">Localization based on floor plan</string>
+    <!-- LocalisationActivity -->
+    <string name="ActivityLocalisationLabel">Localisation based on floor plan</string>
     <string name="StartUpdatingLocationButton">Start Updating Location</string>
 
     <!-- activity_localization.xml -->
     <string name="FloorPlanContentDescription">Floor plan for localization</string>
     <string name="LocationPinContentDescription">Pin of current location</string>
     <string name="APContentDescription">Pin of active AP</string>
+    <string name="StartLoggingButtonPressed">Start logging</string>
+    <string name="StopLoggingButtonPressed">Stop logging</string>
 
 </resources>
