@@ -16,7 +16,6 @@ import android.net.wifi.rtt.RangingResult;
 import android.net.wifi.rtt.RangingResultCallback;
 import android.net.wifi.rtt.WifiRttManager;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.util.Log;
@@ -26,25 +25,16 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.google.android.material.snackbar.Snackbar;
-import com.opencsv.CSVWriter;
-
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
-
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.FormBody;
@@ -53,7 +43,6 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-//TODO put common class in service?
 //TODO Try different layout view(linear?)
 /**
  * Send ranging requests and display distance and RSSI values
@@ -116,9 +105,7 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
     private Button logging_button_text;
 
     int Check_Point_Counts = 0;
-    Boolean First_measurement = true;
-
-    FileWriter writer;
+    private Boolean First_measurement = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -186,16 +173,6 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
             //Start
             registerSensors();
             startRangingRequest();
-            //writeCSV();
-
-            /*
-            Log.d(TAG, String.valueOf(this.getExternalFilesDir(null)));
-            try {
-                writer = new FileWriter(new File(this.getExternalFilesDir(null).getAbsolutePath(), "data.csv"));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-             */
         }
     }
 
@@ -247,7 +224,6 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
             }
         };
         Update_Handler.postDelayed(Update_Runnable,1000);
-        //TODO this handler affects http performance?
     }
 
     public void onClickLogData(View view){
@@ -263,11 +239,11 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
 
         if (!logging) {
             Snackbar.make(view,"Start sending data",Snackbar.LENGTH_SHORT).show();
-            logging_button_text.setText("Stop logging");
+            logging_button_text.setText(R.string.StopLoggingButtonPressed);
 
         } else {
             Snackbar.make(view,"Stop sending data",Snackbar.LENGTH_SHORT).show();
-            logging_button_text.setText("Start logging");
+            logging_button_text.setText(R.string.StartLoggingButtonPressed);
         }
 
         Log.d(TAG,"logging: "+logging+" activity running: "+activity_running);
@@ -280,7 +256,7 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
                 if (logging && activity_running){
 
                     //rate of RTT packet sending(optimal is 200)
-                    LogRTT_Handler.postDelayed(this,200);
+                    LogRTT_Handler.postDelayed(this,100);
 
                     List<String> RangingInfo = new ArrayList<>();
                     for (RangingResult rangingResult: Synchronised_RTT){
@@ -325,7 +301,7 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
                         @Override
                         public void onResponse(@NonNull Call call, @NonNull Response response)
                                 throws IOException {
-                            String result = Objects.requireNonNull(response.body()).string();
+                            //String result = Objects.requireNonNull(response.body()).string();
                             response.close();
                             //Log.i("result",result);
                         }
@@ -424,7 +400,6 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
                 LastMagReading[1] = alpha * LastMagReading[1] + (1-alpha) * sensorEvent.values[1];
                 LastMagReading[2] = alpha * LastMagReading[2] + (1-alpha) * sensorEvent.values[2];
                  */
-
                 LastMagReading[0] = sensorEvent.values[0];
                 LastMagReading[1] = sensorEvent.values[1];
                 LastMagReading[2] = sensorEvent.values[2];
@@ -531,32 +506,13 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
             Synchronised_LastGyroReading = LastGyroReading;
             Synchronised_LastMagReading = LastMagReading;
             Closest_IMU_timestamp = IMU_timestamp;
+
             if (activity_running) {
                 if (!temp_result.isEmpty()){
                     rangingActivityAdapter.swapData(temp_result);
                 }
                 queueNextRangingRequest();
             }
-        }
-    }
-
-    public void WriteCSV(){
-        String csv = (Environment.getExternalStorageDirectory().getAbsolutePath() + "/RTTIMU.csv");
-        Log.d(TAG,csv);
-        CSVWriter writer = null;
-        try{
-            writer = new CSVWriter(new FileWriter(csv));
-
-            List<String[]> data = new ArrayList<String[]>();
-            data.add(new String[]{"A","B"});
-            data.add(new String[]{"C","D"});
-
-            writer.writeAll(data);
-
-            writer.close();
-            //callRead();
-        } catch (IOException e){
-            e.printStackTrace();
         }
     }
 

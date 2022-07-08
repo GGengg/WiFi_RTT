@@ -50,5 +50,7 @@
     <string name="FloorPlanContentDescription">Floor plan for localization</string>
     <string name="LocationPinContentDescription">Pin of current location</string>
     <string name="APContentDescription">Pin of active AP</string>
+    <string name="StartLoggingButtonPressed">Start logging</string>
+    <string name="StopLoggingButtonPressed">Stop logging</string>
 
 </resources>

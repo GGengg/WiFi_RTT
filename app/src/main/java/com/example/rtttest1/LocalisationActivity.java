@@ -62,7 +62,6 @@ public class LocalisationActivity extends AppCompatActivity implements SensorEve
     private WifiRttManager myWifiRTTManager;
     private WifiManager myWifiManager;
     private RTTRangingResultCallback myRTTRangingResultCallback;
-    private WifiScanReceiver myWifiScanReceiver;
 
     private List<ScanResult> RTT_APs = new ArrayList<>();
     private final List<RangingResult> Ranging_Results = new ArrayList<>();
@@ -120,14 +119,14 @@ public class LocalisationActivity extends AppCompatActivity implements SensorEve
     private String[] Calculated_coordinates = new String[2];
     private String[] Previous_location_for_line_drawing = new String[2];
 
-    private final AccessPoints AP1 = new AccessPoints("b0:e4:d5:39:26:89",31,14.46);
-    private final AccessPoints AP2 = new AccessPoints("cc:f4:11:8b:29:4d",49,15.11);
-    private final AccessPoints AP3 = new AccessPoints("b0:e4:d5:01:26:f5",43.19,14.66);
-    private final AccessPoints AP4 = new AccessPoints("b0:e4:d5:91:ba:5d",15.68,13.17);
-    private final AccessPoints AP5 = new AccessPoints("b0:e4:d5:96:3b:95",8.78,5.6);
-    private final AccessPoints AP6 = new AccessPoints("f8:1a:2b:06:3c:0b",29.1,5.6);
-    private final AccessPoints AP7 = new AccessPoints("14:22:3b:2a:86:f5",39.31,5.6);
-    private final AccessPoints AP8 = new AccessPoints("14:22:3b:16:5a:bd",51.76,5.6);
+    private final AccessPoint AP1 = new AccessPoint("b0:e4:d5:39:26:89",35.45,14.07);
+    private final AccessPoint AP2 = new AccessPoint("cc:f4:11:8b:29:4d",49,15.11);
+    private final AccessPoint AP3 = new AccessPoint("b0:e4:d5:01:26:f5",27.69,14.72);
+    private final AccessPoint AP4 = new AccessPoint("b0:e4:d5:91:ba:5d",15.68,13.17);
+    private final AccessPoint AP5 = new AccessPoint("b0:e4:d5:96:3b:95",12.08,5.6);
+    private final AccessPoint AP6 = new AccessPoint("f8:1a:2b:06:3c:0b",29.1,5.6);
+    private final AccessPoint AP7 = new AccessPoint("14:22:3b:2a:86:f5",39.31,5.6);
+    private final AccessPoint AP8 = new AccessPoint("14:22:3b:16:5a:bd",50.43,5.6);
 
     //flag for leaving the activity
     private Boolean Running = true;
@@ -327,8 +326,8 @@ public class LocalisationActivity extends AppCompatActivity implements SensorEve
                             location_pin.setX(coordinate_X_to_Pixel(Double.parseDouble(Calculated_coordinates[1])));
                             location_pin.setY(coordinate_Y_to_Pixel(Double.parseDouble(Calculated_coordinates[0])));
 
-                            path.lineTo((float) (coordinate_X_to_bitmap(Double.parseDouble(Calculated_coordinates[1]))),
-                                    (float)(coordinate_Y_to_bitmap(Double.parseDouble(Calculated_coordinates[0]))));
+                            path.lineTo(coordinate_X_to_bitmap(Double.parseDouble(Calculated_coordinates[1])),
+                                    coordinate_Y_to_bitmap(Double.parseDouble(Calculated_coordinates[0])));
                             temp_canvas.drawPath(path,paint);
                             floor_plan.setImageBitmap(temp_bitmap);
 
@@ -560,12 +559,9 @@ public class LocalisationActivity extends AppCompatActivity implements SensorEve
                     if (!APs_MacAddress.contains(scanResult.BSSID)) {
                         APs_MacAddress.add(scanResult.BSSID);
                         RTT_APs.add(scanResult);
-                        //TODO Handler getmaxpeer
                     }
                 }
             }
-            //Log.d(TAG,"APs_MacAddress"+"("+APs_MacAddress.size()+")"+": "+APs_MacAddress);
-            //Log.d(TAG, "RTT_APs"+"("+RTT_APs.size()+")"+": "+RTT_APs);
         }
     }
 

@@ -30,7 +30,6 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -122,14 +121,14 @@ public class LocalisationActivity_mechanical extends AppCompatActivity implement
     private String[] Calculated_coordinates = new String[2];
     private String[] Previous_location_for_line_drawing = new String[2];
 
-    private final AccessPoints AP1 = new AccessPoints("b0:e4:d5:39:26:89",10.3,21.67);
-    private final AccessPoints AP2 = new AccessPoints("cc:f4:11:8b:29:4d",0.4,20);
-    private final AccessPoints AP3 = new AccessPoints("b0:e4:d5:01:26:f5",17.25,14.53);
-    private final AccessPoints AP4 = new AccessPoints("b0:e4:d5:91:ba:5d",17.4,20.6);
-    private final AccessPoints AP5 = new AccessPoints("b0:e4:d5:96:3b:95",0.4,9.5);
-    private final AccessPoints AP6 = new AccessPoints("f8:1a:2b:06:3c:0b",0.4,16.24);
-    private final AccessPoints AP7 = new AccessPoints("14:22:3b:2a:86:f5",25.34,18.5);
-    private final AccessPoints AP8 = new AccessPoints("14:22:3b:16:5a:bd",10.28,12.4);
+    private final AccessPoint AP1 = new AccessPoint("b0:e4:d5:39:26:89",10.3,21.67);
+    private final AccessPoint AP2 = new AccessPoint("cc:f4:11:8b:29:4d",0.4,20);
+    private final AccessPoint AP3 = new AccessPoint("b0:e4:d5:01:26:f5",17.25,14.53);
+    private final AccessPoint AP4 = new AccessPoint("b0:e4:d5:91:ba:5d",17.4,20.6);
+    private final AccessPoint AP5 = new AccessPoint("b0:e4:d5:96:3b:95",0.4,9.5);
+    private final AccessPoint AP6 = new AccessPoint("f8:1a:2b:06:3c:0b",0.4,16.24);
+    private final AccessPoint AP7 = new AccessPoint("14:22:3b:2a:86:f5",25.34,18.5);
+    private final AccessPoint AP8 = new AccessPoint("14:22:3b:16:5a:bd",10.28,12.4);
 
     //flag for leaving the activity
     private Boolean Running = true;
@@ -613,7 +612,6 @@ public class LocalisationActivity_mechanical extends AppCompatActivity implement
                     if (!APs_MacAddress.contains(scanResult.BSSID)) {
                         APs_MacAddress.add(scanResult.BSSID);
                         RTT_APs.add(scanResult);
-                        //TODO Handler getmaxpeer
                     }
                 }
             }
