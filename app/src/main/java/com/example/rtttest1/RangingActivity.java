@@ -9,6 +9,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.net.Uri;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.net.wifi.rtt.RangingRequest;
@@ -29,6 +30,12 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.core.content.FileProvider;
+import com.google.android.material.snackbar.Snackbar;
+import com.opencsv.CSVWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
 import com.google.android.material.snackbar.Snackbar;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -103,6 +110,7 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
 
     private TextView Counts;
     private Button logging_button_text;
+    private RequestBody rtt_body;
 
     int Check_Point_Counts = 0;
     private Boolean First_measurement = true;
@@ -290,6 +298,8 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
                             .post(RTT_body)
                             .build();
 
+                    rtt_body = RTT_body;
+
                     //TODO use retrofit rather rolling own requests
                     final Call call = client.newCall(RTT_request);
                     call.enqueue(new Callback() {
@@ -368,6 +378,32 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
 
 
          */
+    }
+//TODO new feature: export data as csv
+    public void onClickLogDataCsv(View view){
+        Snackbar.make(view,"Start exporting data",Snackbar.LENGTH_SHORT).show();
+
+        try{
+            //save file in device
+            FileOutputStream out = openFileOutput("data.scv", Context.MODE_PRIVATE);
+            out.write((rtt_body.toString()).getBytes());
+            out.close();
+
+            //export
+            Context context = getApplicationContext();
+            File filelocation = new File(getFilesDir(),"data.scv");
+            Uri path = FileProvider.getUriForFile(context,"com.example.exportcsv.fileprovider",filelocation);
+            Intent fileIntent = new Intent(Intent.ACTION_SEND);
+            fileIntent.setType("text/csv");
+            fileIntent.putExtra(Intent.EXTRA_SUBJECT,"Data");
+            fileIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            fileIntent.putExtra(Intent.EXTRA_STREAM,path);
+            startActivity(Intent.createChooser(fileIntent,"Send mail"));
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+
     }
 
     @Override

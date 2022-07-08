@@ -173,26 +173,37 @@
         android:id="@+id/btnBackgroundScan"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:layout_marginEnd="32dp"
         android:onClick="onClickBackgroundScan"
         android:text="@string/BackgroundScanButton"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textViewDelayBeforeNextRequest" />
+        app:layout_constraintTop_toBottomOf="@+id/btnLogRTT"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
     <Button
         android:id="@+id/btnLogRTT"
-        android:layout_width="140dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginStart="60dp"
         android:onClick="onClickLogData"
         android:text="@string/LogButton"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/btnBackgroundScan"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textViewDelayBeforeNextRequest" />
+        app:layout_constraintTop_toBottomOf="@+id/textViewDelayBeforeNextRequest"
+        app:layout_constraintVertical_bias="0.3"/>
 
+    <Button
+        android:id="@+id/btnLogRTT_csv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="60dp"
+        android:onClick="onClickLogDataCsv"
+        android:text="@string/LogButtonCsv"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintLeft_toRightOf="@+id/btnLogRTT"
+        app:layout_constraintTop_toBottomOf="@+id/textViewDelayBeforeNextRequest"
+        app:layout_constraintVertical_bias="0.3"/>
     <EditText
         android:id="@+id/editTextServer"
         android:layout_width="100dp"
