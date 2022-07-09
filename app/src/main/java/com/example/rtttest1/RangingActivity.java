@@ -17,7 +17,6 @@ import android.net.wifi.rtt.RangingResult;
 import android.net.wifi.rtt.RangingResultCallback;
 import android.net.wifi.rtt.WifiRttManager;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.util.Log;
@@ -27,29 +26,29 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.core.content.FileProvider;
-
 import com.google.android.material.snackbar.Snackbar;
 import com.opencsv.CSVWriter;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
+import com.google.android.material.snackbar.Snackbar;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+<<<<<<< HEAD
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+=======
+>>>>>>> 01bd1673d451ff67047e6b2dfd29b9ad004630f9
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.FormBody;
@@ -58,7 +57,6 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-//TODO put common class in service?
 //TODO Try different layout view(linear?)
 
 /**
@@ -123,9 +121,7 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
     private List<String[]> dataLines;
 
     int Check_Point_Counts = 0;
-    Boolean First_measurement = true;
-
-    FileWriter writer;
+    private Boolean First_measurement = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -196,6 +192,7 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
             //Start
             registerSensors();
             startRangingRequest();
+<<<<<<< HEAD
             //writeCSV();
 
             /*
@@ -207,6 +204,79 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
             }
              */
             }
+=======
+        }
+    }
+
+    private void registerSensors(){
+        for (Sensor eachSensor:sensors.values()){
+            sensorManager.registerListener(this,
+                    eachSensor,SensorManager.SENSOR_DELAY_FASTEST);
+        }
+    }
+
+    private void unregisterSensors(){
+        for (Sensor eachSensor:sensors.values()){
+            sensorManager.unregisterListener(this,eachSensor);
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private void startRangingRequest() {
+        RangingRequest rangingRequest =
+                new RangingRequest.Builder().addAccessPoints(RTT_APs).build();
+
+        myWifiRTTManager.startRanging(
+                rangingRequest, getApplication().getMainExecutor(), myRTTResultCallback);
+
+        String delay = RangingDelayEditText.getText().toString();
+        if (!delay.equals("")){
+            RangingDelay = Integer.parseInt(RangingDelayEditText.getText().toString());
+        }else{
+            Snackbar.make(findViewById(R.id.textViewDelayBeforeNextRequest),
+                    "Please enter a valid number",Snackbar.LENGTH_SHORT).show();
+            //TODO edit snackbar
+        }
+    }
+
+    public void onClickBackgroundScan(View view){
+        view.setEnabled(false);
+        Snackbar.make(view,"Start scanning in background",Snackbar.LENGTH_SHORT).show();
+        Handler Update_Handler = new Handler();
+        Runnable Update_Runnable = new Runnable() {
+            @Override
+            public void run() {
+                if (activity_running && (APs_MacAddress.size() < 8)){
+                    //background scan rate
+                    Update_Handler.postDelayed(this,3000);
+                    myWifiManager.startScan();
+                } else{
+                    Update_Handler.removeCallbacks(this);
+                }
+            }
+        };
+        Update_Handler.postDelayed(Update_Runnable,1000);
+    }
+
+    public void onClickLogData(View view){
+        //TODO editText
+        //TODO will AsyncTask/Thread/Queue work better?
+        Log.d(TAG,"logging: "+logging+" activity running: "+activity_running);
+
+        EditText url_text = findViewById(R.id.editTextServer);
+        String url_bit = url_text.getText().toString();
+        String url = "http://192.168.86." + url_bit + ":5000/server";
+
+        final OkHttpClient client = new OkHttpClient();
+
+        if (!logging) {
+            Snackbar.make(view,"Start sending data",Snackbar.LENGTH_SHORT).show();
+            logging_button_text.setText(R.string.StopLoggingButtonPressed);
+
+        } else {
+            Snackbar.make(view,"Stop sending data",Snackbar.LENGTH_SHORT).show();
+            logging_button_text.setText(R.string.StartLoggingButtonPressed);
+>>>>>>> 01bd1673d451ff67047e6b2dfd29b9ad004630f9
         }
 
         private void registerSensors () {
@@ -222,10 +292,15 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
             }
         }
 
+<<<<<<< HEAD
         @SuppressLint("MissingPermission")
         private void startRangingRequest () {
             RangingRequest rangingRequest =
                     new RangingRequest.Builder().addAccessPoints(RTT_APs).build();
+=======
+                    //rate of RTT packet sending(optimal is 200)
+                    LogRTT_Handler.postDelayed(this,100);
+>>>>>>> 01bd1673d451ff67047e6b2dfd29b9ad004630f9
 
             myWifiRTTManager.startRanging(
                     rangingRequest, getApplication().getMainExecutor(), myRTTResultCallback);
@@ -423,7 +498,7 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
                         @Override
                         public void onResponse(@NonNull Call call, @NonNull Response response)
                                 throws IOException {
-                            String result = Objects.requireNonNull(response.body()).string();
+                            //String result = Objects.requireNonNull(response.body()).string();
                             response.close();
                             Log.i("result", result);
                         }
@@ -501,10 +576,16 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
                 LastMagReading[1] = alpha * LastMagReading[1] + (1-alpha) * sensorEvent.values[1];
                 LastMagReading[2] = alpha * LastMagReading[2] + (1-alpha) * sensorEvent.values[2];
                  */
+<<<<<<< HEAD
 
                     LastMagReading[0] = sensorEvent.values[0];
                     LastMagReading[1] = sensorEvent.values[1];
                     LastMagReading[2] = sensorEvent.values[2];
+=======
+                LastMagReading[0] = sensorEvent.values[0];
+                LastMagReading[1] = sensorEvent.values[1];
+                LastMagReading[2] = sensorEvent.values[2];
+>>>>>>> 01bd1673d451ff67047e6b2dfd29b9ad004630f9
 
                     String MagX = this.getString(R.string.Magnetic_FieldX, LastMagReading[0]);
                     String MagY = this.getString(R.string.Magnetic_FieldY, LastMagReading[1]);
@@ -645,6 +726,7 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
                 Check_Point_Counts++;
                 Counts.setText(String.valueOf(Check_Point_Counts));
             }
+<<<<<<< HEAD
             return super.onKeyDown(keyCode, event);
         }
 
@@ -677,8 +759,54 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
             if (data.contains(",") || data.contains("'")) {
                 data = data.replace("\"", "\"\"");
                 escapedData = "\"" + data + "\"";
+=======
+            RTT_timestamp = SystemClock.elapsedRealtimeNanos();
+            Synchronised_RTT = temp_result;
+            Synchronised_orientationAngles = orientationAngles;
+            Synchronised_LastAccReading = LastAccReading;
+            Synchronised_LastGyroReading = LastGyroReading;
+            Synchronised_LastMagReading = LastMagReading;
+            Closest_IMU_timestamp = IMU_timestamp;
+
+            if (activity_running) {
+                if (!temp_result.isEmpty()){
+                    rangingActivityAdapter.swapData(temp_result);
+                }
+                queueNextRangingRequest();
+>>>>>>> 01bd1673d451ff67047e6b2dfd29b9ad004630f9
             }
             return escapedData;
         }
 
+<<<<<<< HEAD
     }
+=======
+    //For earphone remote control
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event){
+        if (keyCode == 85){
+            Toast.makeText(getApplicationContext(),"key pressed :)",Toast.LENGTH_SHORT).show();
+            Check_Point_Counts ++;
+            Counts.setText(String.valueOf(Check_Point_Counts));
+        }
+        return super.onKeyDown(keyCode,event);
+    }
+
+    @Override
+    protected void onStop() {
+        Log.d(TAG, "onStop() RangingActivity");
+        super.onStop();
+        unregisterSensors();
+        unregisterReceiver(myWifiScanReceiver);
+        activity_running = false;
+    }
+
+    protected void onResume() {
+        Log.d(TAG,"onResume() RangingActivity");
+        super.onResume();
+        registerSensors();
+        //registerReceiver(myWifiScanReceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+        activity_running = true;
+    }
+}
+>>>>>>> 01bd1673d451ff67047e6b2dfd29b9ad004630f9
