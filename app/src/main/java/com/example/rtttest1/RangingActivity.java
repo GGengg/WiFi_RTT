@@ -120,8 +120,6 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
 
     private TextView Counts;
     private Button logging_button_text;
-    private RequestBody rtt_body;
-    private RequestBody imu_body;
     private List<String[]> dataLines;
 
     int Check_Point_Counts = 0;
