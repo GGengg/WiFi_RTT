@@ -3,6 +3,11 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/Users/zlx13/Desktop/WiFi_RTT-test/app/src/main/res/layout/activity_localisation.xml" value="0.22826086956521738" />
+        <entry key="..\:/Users/zlx13/Desktop/WiFi_RTT-test/app/src/main/res/layout/activity_localisation_mechanical.xml" value="0.22826086956521738" />
+        <entry key="..\:/Users/zlx13/Desktop/WiFi_RTT-test/app/src/main/res/layout/activity_ranging.xml" value="0.22826086956521738" />
+        <entry key="..\:/Users/zlx13/Desktop/WiFi_RTT-test/app/src/main/res/layout/main_activity_recycler_item.xml" value="0.22826086956521738" />
+        <entry key="..\:/Users/zlx13/Desktop/WiFi_RTT-test/app/src/main/res/xml/provider_paths.xml" value="0.22826086956521738" />
         <entry key="app/src/main/res/drawable-v24/ic_launcher_foreground.xml" value="0.4197916666666667" />
         <entry key="app/src/main/res/drawable/ic_launcher_background.xml" value="0.5927083333333333" />
         <entry key="app/src/main/res/layout/activity_localisation_mechanical.xml" value="0.24722222222222223" />
