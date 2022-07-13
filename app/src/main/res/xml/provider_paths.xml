@@ -1,5 +1,8 @@
 <paths>
-    <files-path
-        name="rangingData"
-        path="."/>
+    <external-path
+        name="rangingdata"
+        path="/Download/"/>
+<!--    <files-path-->
+<!--        name="rangingData"-->
+<!--        path="."/>-->
 </paths>

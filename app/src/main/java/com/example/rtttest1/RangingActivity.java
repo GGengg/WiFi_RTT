@@ -1,5 +1,7 @@
 package com.example.rtttest1;
 
+import static android.os.Environment.getExternalStorageDirectory;
+
 import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -131,7 +133,7 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
     protected void onCreate(Bundle savedInstanceState) {
         dataLines = new ArrayList<>();
         dataLines.add(new String[]{"RTT_TIMESTAMP", "RTT_RESULT", "IMU_TIMESTAMP", "Accx", "Accy", "Accz",
-                "Gyrox","Gyroy","Gyroz","Magx","Magy","Magz","Azimuth","Pitch","Roll","Points","\n"});
+                "Gyrox", "Gyroy", "Gyroz", "Magx", "Magy", "Magz", "Azimuth", "Pitch", "Roll", "Points", "\n"});
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate() RangingActivity");
 
@@ -424,33 +426,57 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
         }
 
         public void onClickLogDataCsv (View view){
-            Snackbar.make(view, "Start exporting data", Snackbar.LENGTH_SHORT).show();
-
             try {
-                //save file in device
-                FileOutputStream out = openFileOutput("data.csv", Context.MODE_PRIVATE);
+                // save csv file externally:/storage/emulate/0/Download/
+                String folderPath = getExternalStorageDirectory().getAbsolutePath() + "/Download/";
+                File file = new File(folderPath + "ranging_data.csv");
+                FileOutputStream outLocal = new FileOutputStream(file);
+
+                // save csv file internally
+//                FileOutputStream out = openFileOutput("ranging_data.csv", Context.MODE_PRIVATE);
                 for (String[] dataLine : dataLines) {
                     String s = convertToCSV(dataLine);
                     byte[] bytes = s.getBytes();
-                    out.write(bytes);
+//                    out.write(bytes);
+                    outLocal.write(bytes);
                 }
-                out.close();
-                //export
+//                out.close();
+                outLocal.close();
+
+                // export csv file
                 Context context = getApplicationContext();
-                File filelocation = new File(getFilesDir(), "data.csv");
-                Uri path = FileProvider.getUriForFile(context, "com.example.exportcsv.fileprovider", filelocation);
+                // File fileLocation = new File(getFilesDir(), "ranging_data.csv");
+                File fileLocation = new File(getExternalStorageDirectory() + "/Download", "ranging_data.csv");
+                Uri path = FileProvider.getUriForFile(context, "com.example.exportcsv.fileprovider", fileLocation);
                 Intent fileIntent = new Intent(Intent.ACTION_SEND);
                 fileIntent.setType("text/csv");
                 fileIntent.putExtra(Intent.EXTRA_SUBJECT, "Data");
                 fileIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 fileIntent.putExtra(Intent.EXTRA_STREAM, path);
-                startActivity(Intent.createChooser(fileIntent, "Send mail"));
+                startActivity(Intent.createChooser(fileIntent, "Send to"));
+
+                // clear the array for next measurement
                 dataLines = new ArrayList<>();
                 dataLines.add(new String[]{"RTT_TIMESTAMP", "RTT_RESULT", "IMU_TIMESTAMP", "Accx", "Accy", "Accz",
-                        "Gyrox","Gyroy","Gyroz","Magx","Magy","Magz","Azimuth","Pitch","Roll","Points","\n"});
+                        "Gyrox", "Gyroy", "Gyroz", "Magx", "Magy", "Magz", "Azimuth", "Pitch", "Roll", "Points", "\n"});
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        }
+
+        public String convertToCSV (String[]data){
+            return Stream.of(data)
+                    .map(this::escapeSpecialCharacters)
+                    .collect(Collectors.joining(","));
+        }
+
+        public String escapeSpecialCharacters (String data){
+            String escapedData = data;
+            if (data.contains(",") || data.contains("'")) {
+                data = data.replace("\"", "\"\"");
+                escapedData = "\"" + data + "\"";
+            }
+            return escapedData;
         }
 
         @Override
@@ -600,7 +626,7 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
         }
 
         public void WriteCSV () {
-            String csv = (Environment.getExternalStorageDirectory().getAbsolutePath() + "/RTTIMU.csv");
+            String csv = (getExternalStorageDirectory().getAbsolutePath() + "/RTTIMU.csv");
             Log.d(TAG, csv);
             CSVWriter writer = null;
             try {
@@ -635,7 +661,7 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
             Log.d(TAG, "onStop() RangingActivity");
             super.onStop();
             unregisterSensors();
-            unregisterReceiver(myWifiScanReceiver);
+            //unregisterReceiver(myWifiScanReceiver);
             activity_running = false;
         }
 
@@ -647,20 +673,4 @@ public class RangingActivity extends AppCompatActivity implements SensorEventLis
             activity_running = true;
         }
 
-
-        public String convertToCSV (String[]data){
-            return Stream.of(data)
-                    .map(this::escapeSpecialCharacters)
-                    .collect(Collectors.joining(","));
-        }
-
-        public String escapeSpecialCharacters (String data){
-            String escapedData = data;
-            if (data.contains(",") || data.contains("'")) {
-                data = data.replace("\"", "\"\"");
-                escapedData = "\"" + data + "\"";
-            }
-            return escapedData;
-        }
-
-    }
+}
